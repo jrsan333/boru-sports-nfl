@@ -388,7 +388,7 @@ jobs:
               if not required.issubset(rows.fieldnames or []): raise ValueError('Columnas PBP ausentes: '+str(sorted(required-set(rows.fieldnames or []))))
               # Team vector: plays, dropbacks, designed/non-dropback runs, EPA sum/count, success sum/count, red-zone plays/count known.
               # Player vector: attempts, completions, pass yards, carries, rush yards, targets, receptions, rec yards, red-zone attempts/carries/targets, known zone counts by role, valid yards counts by role.
-              ts=defaultdict(lambda: [0]*9); ps=defaultdict(lambda: [0]*17); seen=set()
+              ts=defaultdict(lambda: [0]*9); ps=defaultdict(lambda: [0]*17); dx=defaultdict(lambda: [0]*12); seen=set()
               for r in rows:
                   g=games.get(r['game_id']); t=team(r['posteam']); opp=team(r['defteam'])
                   if not g or r['season_type']!='REG' or number(r['season'])!=year or number(r['week'])!=g['week'] or not t or not opp or t==opp or {t,opp}!={g['home'],g['away']}: continue
@@ -405,6 +405,21 @@ jobs:
                   if e is not None: a[3]+=e; a[4]+=1
                   if s in (0,1): a[5]+=int(s); a[6]+=1
                   a[7]+=int(rz); a[8]+=int(known)
+                  # Additional defensive metrics, stored under the attacking team.
+                  b=dx[(r['game_id'],t,state)]
+                  if d==1:
+                      sack=number(r.get('sack')); hit=number(r.get('qb_hit'))
+                      if sack in (0,1): b[0]+=int(sack); b[1]+=1
+                      if hit in (0,1): b[2]+=int(hit); b[3]+=1
+                  yd=number(r.get('yards_gained'))
+                  if yd is not None:
+                      if r['play_type']=='pass' and number(r.get('pass_attempt'))==1 and number(r.get('sack'))==0:
+                          b[4]+=int(yd>=20); b[5]+=1
+                      if r['play_type']=='run' and number(r.get('rush_attempt'))==1:
+                          b[6]+=int(yd>=10); b[7]+=1
+                  if rz:
+                      if e is not None: b[8]+=e; b[9]+=1
+                      if s in (0,1): b[10]+=int(s); b[11]+=1
                   comp=number(r['complete_pass'])
                   def event(pid,role,yd):
                       pid=str(pid or '').strip()
@@ -430,7 +445,7 @@ jobs:
               for gid,g in sorted(games.items(),key=lambda x:(x[1]['date'],x[0])):
                   for t,o in ((g['home'],g['away']),(g['away'],g['home'])):
                       last=previous.get(t); rest=(g['date']-last).days if last else None; previous[t]=g['date']
-                      if gid in complete: records.append({'id':gid,'week':g['week'],'team':t,'opponent':o,'date':g['date'].isoformat(),'rest':rest,'states':teams[(gid,t)]})
+                      if gid in complete: records.append({'id':gid,'week':g['week'],'team':t,'opponent':o,'date':g['date'].isoformat(),'rest':rest,'states':teams[(gid,t)],'defense_ext':{state:[round(v,5) for v in dx[(gid,t,state)]] for state in teams[(gid,t)]}})
               pr=[{'id':gid,'team':t,'player_id':pid,'states':states} for (gid,t,pid),states in players.items()]
               return records,pr,len(complete)
           
