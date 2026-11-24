@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 2</title>
+<title>BÖRU NFL · Fase 2.1 — Radar defensivo</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -17,6 +17,15 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
 @media(max-width:380px){.fields3{grid-template-columns:1fr 1fr}.kpi strong{font-size:18px}.cmp h3{font-size:13px}.comparison{grid-template-columns:1fr}}
 .nav{grid-template-columns:repeat(4,1fr)}
 .nav button{padding:12px 2px;font-size:12px}.model-output{padding-top:12px}.info-well{padding:10px;border:1px solid #38596d;border-radius:11px;background:#0d202e;margin:10px 0;color:#e8faf6;font-weight:650}.forecast{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.forecast .kpi{min-width:95px;flex:1}.forecast .kpi strong{font-size:20px}.analysis-status{font-size:12px;margin:11px 0}.status a{color:inherit}.meterline{height:12px;border-radius:12px;overflow:hidden;display:flex;background:#334b59;margin:10px 0}.meterline>span:first-child{background:#55d8bb}.meterline>span:last-child{background:#dba75a}#otherCoords[hidden]{display:none!important}@media(max-width:380px){.nav button{font-size:11px}.nav{gap:3px;padding:4px}}
+/* Fase 2.1: radar de defensiva rival */
+.defense-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.defense-stat{background:#0b1f2b;border:1px solid #305363;border-radius:13px;padding:13px;min-width:0}
+.defense-stat .cap{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.defense-stat .big{display:block;font-size:28px;font-weight:850;letter-spacing:-.035em;color:var(--teal);margin:3px 0}
+.defense-stat .tiny{display:block;font-size:11px;color:var(--muted);line-height:1.5}
+.defense-bar{height:10px;border-radius:10px;background:#25434d;overflow:hidden;margin-top:8px}
+.defense-bar>span{display:block;height:100%;background:#62dcca;max-width:100%}
+@media(max-width:450px){.defense-grid{grid-template-columns:1fr}.defense-stat .big{font-size:26px}}
 </style>
 </head>
 <body>
@@ -24,7 +33,7 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
 <header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.1</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -54,9 +63,27 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
     <div class="card"><h2>1. Partido y mercado</h2>
       <p class="subtle">Usa la selección que tienes en «Jugadores». El corte excluye la semana del partido.</p>
       <div class="info-well" id="modelPlayerLabel">Cargando jugador…</div>
-      <div class="fields2 field"><div><label for="modelOpp">Rival (abreviatura NFL)</label><input id="modelOpp" list="teamCodes" placeholder="WAS" maxlength="3" autocapitalize="characters"></div>
+      <div class="fields2 field"><div><label for="modelOpp">Rival (abreviatura NFL)</label><select id="modelOpp" aria-label="Selecciona el equipo rival">
+    <option value="">Selecciona equipo rival…</option>
+    <option value="ARI">ARI · Arizona Cardinals</option><option value="ATL">ATL · Atlanta Falcons</option>
+    <option value="BAL">BAL · Baltimore Ravens</option><option value="BUF">BUF · Buffalo Bills</option>
+    <option value="CAR">CAR · Carolina Panthers</option><option value="CHI">CHI · Chicago Bears</option>
+    <option value="CIN">CIN · Cincinnati Bengals</option><option value="CLE">CLE · Cleveland Browns</option>
+    <option value="DAL">DAL · Dallas Cowboys</option><option value="DEN">DEN · Denver Broncos</option>
+    <option value="DET">DET · Detroit Lions</option><option value="GB">GB · Green Bay Packers</option>
+    <option value="HOU">HOU · Houston Texans</option><option value="IND">IND · Indianapolis Colts</option>
+    <option value="JAX">JAX · Jacksonville Jaguars</option><option value="KC">KC · Kansas City Chiefs</option>
+    <option value="LV">LV · Las Vegas Raiders</option><option value="LAC">LAC · Los Angeles Chargers</option>
+    <option value="LAR">LAR · Los Angeles Rams</option><option value="MIA">MIA · Miami Dolphins</option>
+    <option value="MIN">MIN · Minnesota Vikings</option><option value="NE">NE · New England Patriots</option>
+    <option value="NO">NO · New Orleans Saints</option><option value="NYG">NYG · New York Giants</option>
+    <option value="NYJ">NYJ · New York Jets</option><option value="PHI">PHI · Philadelphia Eagles</option>
+    <option value="PIT">PIT · Pittsburgh Steelers</option><option value="SEA">SEA · Seattle Seahawks</option>
+    <option value="SF">SF · San Francisco 49ers</option><option value="TB">TB · Tampa Bay Buccaneers</option>
+    <option value="TEN">TEN · Tennessee Titans</option><option value="WAS">WAS · Washington Commanders</option>
+   </select></div>
       <div><label for="modelLine">Línea Over</label><input id="modelLine" type="number" step="0.5" min="0" value="308.5"></div></div>
-      <datalist id="teamCodes"><option value="ARI"><option value="ATL"><option value="BAL"><option value="BUF"><option value="CAR"><option value="CHI"><option value="CIN"><option value="CLE"><option value="DAL"><option value="DEN"><option value="DET"><option value="GB"><option value="HOU"><option value="IND"><option value="JAX"><option value="KC"><option value="LAC"><option value="LAR"><option value="LV"><option value="MIA"><option value="MIN"><option value="NE"><option value="NO"><option value="NYG"><option value="NYJ"><option value="PHI"><option value="PIT"><option value="SEA"><option value="SF"><option value="TB"><option value="TEN"><option value="WAS"></datalist>
+
       <div class="field"><label for="modelAvailability">Disponibilidad del jugador (verificada manualmente)</label><select id="modelAvailability">
         <option value="unknown">Sin verificar — no asumir que jugará</option><option value="active">Confirmado activo / disponible</option><option value="limited">Entrenamiento limitado / Questionable</option><option value="doubtful">Doubtful / situación incierta</option><option value="out">Out / descartado</option>
       </select></div>
@@ -65,11 +92,16 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
       <div class="field"><label style="display:flex;align-items:flex-start;gap:8px;line-height:1.5"><input id="modelOddsVerified" type="checkbox" style="width:18px;height:18px;margin-top:2px"> Confirmé que actualicé los momios y líneas del Comparador para este jugador y partido.</label></div>
       <div class="btns"><button class="btn primary" id="runModel">Analizar Over / Under</button></div>
     </div>
-    <div class="card"><h2>2. Resultado exploratorio</h2>
+    <div class="card full" id="defenseCard"><h2>2. Radar defensivo del rival</h2>
+      <p class="subtle">¿Cuántas yardas permite la defensa por aire y por tierra? Totales por partido, usando únicamente semanas anteriores al corte seleccionado. También comparamos contra el promedio de liga.</p>
+      <div id="defenseOutput" aria-live="polite"><div class="status warn">Selecciona el rival en «Partido y mercado» para ver sus estadísticas defensivas.</div></div>
+      <div class="status warn">Método: suma de estadísticas individuales del ataque contrario por partido (nflverse). Las yardas aéreas son yardas de pase <b>brutas</b>: no descuentan sacks como las yardas netas de defensa oficiales. Las terrestres pueden omitir acarreos excepcionales de otras posiciones. Son datos descriptivos, no una recomendación de apuesta.</div>
+    </div>
+    <div class="card"><h2>3. Resultado exploratorio</h2>
       <div class="status warn">No es recomendación de apuesta. Si faltan datos o el jugador está descartado, el sistema bloquea la proyección.</div>
       <div id="modelOutput" class="model-output"><p class="muted">Selecciona un jugador, rival y línea, luego pulsa Analizar.</p></div>
     </div>
-    <div class="card"><h2>3. Clima a la hora de inicio</h2>
+    <div class="card"><h2>4. Clima a la hora de inicio</h2>
       <p class="subtle">Pronóstico automático de Open-Meteo, usando las coordenadas aproximadas del estadio seleccionado. Solo partidos próximos. Hora local del estadio.</p>
       <div class="field"><label for="stadium">Estadio / ubicación aproximada</label><select id="stadium">
         <option value="">Selecciona un estadio…</option>
@@ -91,13 +123,13 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
       <div class="btns"><button class="btn secondary" id="checkWeather">Consultar clima</button></div>
       <div id="weatherOutput" class="status warn">Sin consulta meteorológica. El clima no modifica todavía la proyección; primero validaremos su efecto con datos históricos.</div>
     </div>
-    <div class="card"><h2>4. Prueba retrospectiva</h2>
+    <div class="card"><h2>5. Prueba retrospectiva</h2>
       <p class="subtle">Se predice cada partido usando únicamente juegos anteriores del mismo jugador. Sin consultar cuotas históricas de las casas.</p>
       <div id="backtestOutput"><p class="muted">Pulsa «Analizar Over / Under» para calcular la evaluación.</p></div>
       <div class="status warn">Error promedio pequeño ≠ probabilidades bien calibradas. Necesitamos más temporadas y pruebas independientes antes de hablar de ventaja real.</div>
     </div>
     <div class="card full"><h2>Qué entra y qué falta en este modelo</h2>
-      <div class="pills"><span class="pill">✓ Historial real</span><span class="pill">✓ Ajuste moderado por defensiva rival</span><span class="pill">✓ Prueba sin mirar resultados futuros</span><span class="pill">✓ Pronóstico de clima consultable</span><span class="pill">⚠ Lesiones: verificación manual</span><span class="pill">⚠ Noticias: verificación manual</span><span class="pill">⏳ Impacto del clima sin entrenar</span><span class="pill">⏳ Probabilidades calibradas</span></div>
+      <div class="pills"><span class="pill">✓ Historial real</span><span class="pill">✓ Ajuste moderado por defensiva rival</span><span class="pill">✓ Radar de yds aéreas y terrestres permitidas</span><span class="pill">✓ Prueba sin mirar resultados futuros</span><span class="pill">✓ Pronóstico de clima consultable</span><span class="pill">⚠ Lesiones: verificación manual</span><span class="pill">⚠ Noticias: verificación manual</span><span class="pill">⏳ Impacto del clima sin entrenar</span><span class="pill">⏳ Probabilidades calibradas</span></div>
       <p class="subtle">Modelo exploratorio: media reciente más media global, dispersión histórica y ajuste de hasta ±8% por defensiva. La aproximación normal puede fallar para conteos, jugadores con pocos partidos o cambios de rol. No es un modelo de valor esperado validado.</p>
     </div>
   </div>
@@ -149,7 +181,7 @@ const STADIUMS={
  GB:[44.5013,-88.0622],KC:[39.0489,-94.4839],CHI:[41.8623,-87.6167],
  PHI:[39.9008,-75.1675],PIT:[40.4468,-80.0158],NY:[40.8135,-74.0745],
  MIA:[25.9580,-80.2389],NE:[42.0909,-71.2643]};
-const MODEL_VERSION='0.1 — exploratorio';
+const MODEL_VERSION='0.2 — radar defensivo exploratorio';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const mean=x=>x.length?x.reduce((a,b)=>a+b,0)/x.length:0;
 function sd(x){if(x.length<2)return 0;const m=mean(x);return Math.sqrt(x.reduce((sum,v)=>sum+(v-m)**2,0)/(x.length-1));}
@@ -164,27 +196,84 @@ function priorRecords(player,market,season,cutoff){
  Number(r.season)>=season-1&&r[market]!==null&&r[market]!==undefined&&r[market]!==''&&Number.isFinite(Number(r[market])))
  .sort((a,b)=>Number(a.season)-Number(b.season)||Number(a.week)-Number(b.week));
 }
-function defensiveContext(team,market,season,cutoff){
- const opponent=team.toUpperCase().trim();if(!opponent)return null;
- // Una observación por equipo/partido, sumando las estadísticas individuales para ese ataque.
- // Solo hasta la semana ANTERIOR al evento; nunca datos del partido que evaluamos.
- const gameTotals=new Map();
+// Agrega las estadísticas del ataque por enfrentamiento para calcular lo que cedió la defensa.
+// IMPORTANTE: el archivo semanal contiene un registro por jugador, NO un total por equipo.
+// Para evitar doble conteo, se agrupa cada ataque por temporada + semana + equipo + rival.
+function defensiveGameTotals(season,cutoff){
+ const games=new Map();
  for(const r of dataset.records){
-  if(Number(r.season)!==season||Number(r.week)>=cutoff||!r.week||!r.opponent||!r.team)continue;
-  const pos=String(r.position||'').toUpperCase();
-  if(['passing_yards','attempts','completions'].includes(market)&&pos!=='QB')continue;
-  if(['receiving_yards','receptions','targets'].includes(market)&&!['RB','FB','WR','TE'].includes(pos))continue;
-  if(['rushing_yards','carries'].includes(market)&&!['QB','RB','FB','WR','TE'].includes(pos))continue;
-  const x=r[market];if(x===null||x===undefined||x===''||!Number.isFinite(Number(x)))continue;
-  const key=[r.season,r.week,r.team,r.opponent].join('|');
-  const g=gameTotals.get(key)||{opponent:String(r.opponent).toUpperCase(),total:0};
-  g.total+=Number(x);gameTotals.set(key,g);
+  if(Number(r.season)!==season||Number(r.week)>=cutoff||Number(r.week)<1||!r.team||!r.opponent)continue;
+  const offense=String(r.team).toUpperCase().trim(),defense=String(r.opponent).toUpperCase().trim();
+  if(!offense||!defense||offense===defense)continue;
+  const key=[season,Number(r.week),offense,defense].join('|');
+  if(!games.has(key))games.set(key,{
+   season,week:Number(r.week),offense,defense,
+   passing_yards:0,attempts:0,completions:0,receiving_yards:0,receptions:0,targets:0,
+   rushing_yards:0,carries:0,passValid:false,rushValid:false
+  });
+  const g=games.get(key);
+  for(const field of ['passing_yards','attempts','completions','receiving_yards','receptions','targets','rushing_yards','carries']){
+   const raw=r[field];
+   if(raw===null||raw===undefined||raw===''||!Number.isFinite(Number(raw)))continue;
+   g[field]+=Number(raw);
+  }
+  // Al menos un pasador con intentos, y un corredor con acarreos en este partido.
+  if(Number(r.attempts)>0&&r.passing_yards!==null&&r.passing_yards!==undefined)g.passValid=true;
+  if(Number(r.carries)>0&&r.rushing_yards!==null&&r.rushing_yards!==undefined)g.rushValid=true;
  }
- const league=[...gameTotals.values()].map(g=>g.total).filter(x=>x>0);
- const against=[...gameTotals.values()].filter(g=>g.opponent===opponent&&g.total>0).map(g=>g.total);
- if(league.length<50||against.length<4)return {enough:false,opponent,n:against.length};
- const lg=mean(league),opp=mean(against);const raw=opp/lg-1;
- return {enough:true,opponent,n:against.length,oppMean:opp,leagueMean:lg,adj:clamp(raw*.30,-.08,.08)};
+ return [...games.values()];
+}
+function defenseMetric(team,market,season,cutoff,games){
+ const opponent=String(team||'').trim().toUpperCase();
+ const passBased=['passing_yards','attempts','completions','receiving_yards','receptions','targets'].includes(market);
+ const allow=g=>passBased?g.passValid:g.rushValid;
+ const all=(games||defensiveGameTotals(season,cutoff)).filter(g=>allow(g));
+ const against=all.filter(g=>g.defense===opponent).sort((a,b)=>a.week-b.week);
+ const values=against.map(g=>g[market]);
+ const league=all.map(g=>g[market]);
+ const leagueAvg=mean(league);
+ const byDefense=new Map();
+ for(const g of all){if(!byDefense.has(g.defense))byDefense.set(g.defense,[]);byDefense.get(g.defense).push(g[market]);}
+ const qualified=[...byDefense.entries()].filter(([,a])=>a.length>=4).map(([t,a])=>({team:t,n:a.length,avg:mean(a)})).sort((a,b)=>b.avg-a.avg);
+ const rank=(values.length>=4&&qualified.length>=8)?qualified.findIndex(x=>x.team===opponent)+1:null;
+ return {team:opponent,market,n:values.length,average:mean(values),last3:mean(values.slice(-3)),
+  leagueAvg,leagueGames:league.length,rank,rankTotal:qualified.length,
+  qualified:values.length>=4&&league.length>=50,
+  games:against.map(g=>({week:g.week,offense:g.offense,total:g[market]}))};
+}
+function defensiveContext(team,market,season,cutoff){
+ const opponent=String(team||'').toUpperCase().trim();if(!opponent)return null;
+ const d=defenseMetric(opponent,market,season,cutoff);
+ if(!d.qualified||d.leagueAvg<=0)return {enough:false,opponent,n:d.n,...d};
+ // AJUSTE EXPLORATORIO, no estimación causal: recorte ±8% y contracción 30%.
+ const adjustment=clamp((d.average/d.leagueAvg-1)*.30,-.08,.08);
+ return {enough:true,opponent,n:d.n,oppMean:d.average,leagueMean:d.leagueAvg,adj:adjustment,...d};
+}
+function defenseStatHtml(label,d){
+ if(!d.n)return `<div class="defense-stat"><span class="cap">${esc(label)}</span><span class="big">—</span><span class="tiny">Sin partidos suficientes previos al corte.</span></div>`;
+ const diff=d.leagueAvg>0?(d.average/d.leagueAvg-1)*100:null;
+ const rel=diff===null?'sin referencia':`${diff>=0?'+':''}${diff.toFixed(1)}% vs liga`;
+ const barWidth=d.leagueAvg>0?clamp(d.average/d.leagueAvg*50,2,100):50;
+ return `<div class="defense-stat"><span class="cap">${esc(label)}</span>
+   <span class="big">${num(d.average)} <span style="font-size:12px;font-weight:600">yds/juego</span></span>
+   <span class="tiny">${d.n} partidos · último 3: <b>${num(d.last3)}</b> · liga: <b>${num(d.leagueAvg)}</b></span>
+   <div class="defense-bar"><span style="width:${barWidth.toFixed(1)}%"></span></div>
+   <span class="tiny">${rel} · ${d.rank?`puesto ${d.rank}/${d.rankTotal} (1 = más yds concedidas)`:'sin ranking por muestra'}</span></div>`;
+}
+function renderOpponentDefense(){
+ const target=$('defenseOutput');if(!target)return;
+ const opp=$('modelOpp').value.trim().toUpperCase(),season=Number($('season').value),cutoff=Number($('cutoff').value);
+ if(!opp){target.innerHTML='<div class="status warn">Selecciona un rival arriba. Ya no usamos «WAS» como ejemplo oculto: tienes que elegir el equipo real.</div>';return;}
+ if(dataset.seed_mode){target.innerHTML='<div class="status warn">Se necesitan datos reales de NFL para evaluar a la defensa.</div>';return;}
+ if(!Number.isInteger(season)||!Number.isInteger(cutoff)||cutoff<2){target.innerHTML='<div class="status warn">Selecciona una temporada y semana de corte válidas.</div>';return;}
+ const games=defensiveGameTotals(season,cutoff);
+ const air=defenseMetric(opp,'passing_yards',season,cutoff,games);
+ const ground=defenseMetric(opp,'rushing_yards',season,cutoff,games);
+ if(!air.n&&!ground.n){target.innerHTML=`<div class="status warn">No encontramos partidos anteriores de ${esc(opp)} con datos utilizables para esta temporada y semana de corte. No se aplicará ajuste de rival.</div>`;return;}
+ target.innerHTML=`<div class="pills"><span class="pill">${esc(opp)}</span><span class="pill">${season} · antes de semana ${cutoff}</span><span class="pill">Promedios por partido</span></div>
+   <div class="defense-grid">${defenseStatHtml('✈ Yardas por pase permitidas',air)}${defenseStatHtml('🏃 Yardas terrestres permitidas',ground)}</div>
+   <p class="subtle" style="margin-top:13px">Una cifra mayor que la media de liga significa que esa defensiva ha concedido más yardas en ese rubro, <b>no</b> que la próxima línea vaya a superar el Over.</p>
+   ${air.n<4||ground.n<4?'<div class="status warn">Menos de 4 partidos utilizables en algún rubro: muestra demasiado pequeña para el ajuste del modelo.</div>':''}`;
 }
 function predictBaseline(player,market,season,cutoff,opponent){
  const rows=priorRecords(player,market,season,cutoff).slice(-20);
@@ -233,6 +322,8 @@ function runModel(){
  const out=$('modelOutput'),back=$('backtestOutput');
  if(dataset.seed_mode){out.innerHTML='<div class="status error">Solo hay datos de muestra. Primero carga estadísticas NFL reales.</div>';back.innerHTML='';return;}
  if(!player||!Number.isInteger(season)||!Number.isInteger(cutoff)||cutoff<2||cutoff>23||!$('modelLine').value.trim()||!Number.isFinite(line)||line<0){out.innerHTML='<div class="status warn">Revisa jugador, temporada, corte y línea.</div>';back.innerHTML='';return;}
+ renderOpponentDefense();
+ if(!opp){out.innerHTML='<div class="status warn">Elige primero la defensiva rival. Es obligatorio para evaluar la proyección y mostrar sus yardas permitidas por aire y tierra.</div>';back.innerHTML='';return;}
  if(avail==='out'){out.innerHTML='<div class="status error">Jugador marcado como OUT. No se calcula pronóstico. Verifica el reporte oficial y las reglas de anulación de cada casa.</div>';back.innerHTML='';return;}
  if(avail==='doubtful'){out.innerHTML='<div class="status warn">Participación muy incierta: se suspende la proyección hasta confirmar disponibilidad. No supongas que jugará.</div>';back.innerHTML='';return;}
  const pred=predictBaseline(player,market,season,cutoff,opp);
@@ -250,6 +341,7 @@ function runModel(){
  <div class="forecast"><div class="kpi"><span>Estimación central*</span><strong>${num(pred.mu)}</strong><em>unidades del mercado</em></div><div class="kpi"><span>Prob. Over*</span><strong>${fmtP(p)}</strong><em>línea ${num(line)}</em></div><div class="kpi"><span>Prob. Under*</span><strong>${fmtP(1-p)}</strong><em>sin margen de casa</em></div></div>
  <div class="meterline"><span style="width:${p*100}%"></span><span style="width:${(1-p)*100}%"></span></div>
  <p class="subtle">Intervalo predictivo aproximado 80%: <b>${num(lower)}–${num(upper)}</b>. Base ${num(pred.central)}, ajuste rival ${pred.adj>=0?'+':''}${(pred.adj*100).toFixed(1)}% (${pred.defense?.enough?pred.defense.n+' juegos de defensa':'no estimable'}). ${pred.n} partidos previos.</p>
+ ${pred.defense?.n?`<p class="subtle">La defensa ${esc(opp)} ha permitido una media de <b>${num(pred.defense.average)}</b> ${esc(MARKET[market])} por partido (${pred.defense.n} juegos), frente a ${num(pred.defense.leagueAvg)} de liga. Ver también el radar de pase/carrera arriba.</p>`:''}
  ${alerts.length?`<div class="status warn analysis-status">${alerts.map(a=>'• '+a).join('\n')}</div>`:''}
  <h3 style="margin:19px 0 7px">Comparación de momios</h3>${bookmaker}
  <p class="subtle">*Son números de un modelo <b>experimental</b>; diferencias vs equilibrio no constituyen valor esperado fiable. Sin calibración ni modelado de las lesiones, no se recomienda ninguna selección.</p>`;
@@ -285,10 +377,18 @@ async function checkWeather(){
  }catch(e){el.className='status warn';el.textContent='Pronóstico no disponible: '+e.message+'. Puedes continuar sin clima; la proyección no cambiará.';}finally{clearTimeout(tm);}
 }
 $('runModel').addEventListener('click',runModel);
-for(const id of ['player','market','season','cutoff'])$(id).addEventListener('change',()=>{$('modelOddsVerified').checked=false;});
+function invalidateModel(){
+ $('modelOddsVerified').checked=false;
+ $('modelOutput').innerHTML='<p class="muted">Cambiaron los datos del análisis. Presiona «Analizar Over / Under» para recalcular.</p>';
+ $('backtestOutput').innerHTML='<p class="muted">Recalcula el modelo para actualizar la prueba retrospectiva.</p>';
+ modelSelectLabel();
+ renderOpponentDefense();
+}
+for(const id of ['player','market','season','cutoff','modelOpp','modelLine'])$(id).addEventListener('change',invalidateModel);
+
 $('checkWeather').addEventListener('click',checkWeather);
 $('stadium').addEventListener('change',()=>{$('otherCoords').hidden=$('stadium').value!=='OTHER';});
-document.querySelector('[data-tab="modelo"]').addEventListener('click',modelSelectLabel);
+document.querySelector('[data-tab="modelo"]').addEventListener('click',()=>{modelSelectLabel();renderOpponentDefense();});
 
 </script>
 </body></html>
