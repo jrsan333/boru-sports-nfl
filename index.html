@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 3.5 — Player Usage Intelligence</title>
+<title>BÖRU NFL · Fase 3.6 — Anomaly Detection</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -67,7 +67,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.5</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.6</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
  <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.4</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
@@ -145,6 +145,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
     </div>
     <div class="card full" id="matchupCard"><h2>Matchup Intelligence · Fase 3.4</h2><p class="subtle">Historial del jugador, tendencia, localía comprobada, enfrentamientos con el rival y volumen de juego. Usa los filtros de Jugadores y el rival de Modelo.</p><div class="btns"><button type="button" class="btn secondary" id="refreshMatchup">Actualizar análisis histórico</button></div><div class="status warn" id="matchupOutput" aria-live="polite">Cargando datos históricos…</div></div>
     <div class="card full" id="usageCard"><h2>Player Usage Intelligence · Fase 3.5</h2><p class="subtle">Participación, volumen y eficiencia anteriores al corte. Datos descriptivos, sin ajustes automáticos del modelo.</p><div class="btns"><button type="button" class="btn secondary" id="refreshUsage">Actualizar participación</button></div><div id="usageOutput" class="status warn" aria-live="polite">Abre Modelo para consultar los datos.</div></div>
+    <div class="card full" id="anomalyCard"><h2>Anomaly Detection · Fase 3.6</h2><p class="subtle">Detecta cambios de participación, volumen y resultados atípicos con una base de partidos anteriores. Las alertas son descriptivas y no modifican las proyecciones.</p><div class="btns"><button type="button" class="btn secondary" id="refreshAnomaly">Actualizar detección</button></div><div class="status warn" id="anomalyOutput" aria-live="polite">Consultando datos…</div></div>
     <div class="card"><h2>3. Resultado exploratorio</h2>
       <div class="status warn">No es recomendación de apuesta. Si faltan datos o el jugador está descartado, el sistema bloquea la proyección.</div>
       <div id="modelOutput" class="model-output"><p class="muted">Selecciona un jugador, rival y línea, luego pulsa Analizar.</p></div>
@@ -929,7 +930,7 @@ function usageTeamTotals(records,year,cut){const map=new Map();for(const r of re
 function usageTargetTotal(r,totals){const g=totals.get([Number(r.season),Number(r.week),matchupTeam(r.team),matchupTeam(r.opponent)].join('|'));return g&&g.players.has(String(r.player_id||'').trim())?g.total:null;}
 function makeUsageIndex(records){const map=new Map(),bad=new Set();for(const r of records){if(!r.player_id||!r.team||!r.opponent)continue;const k=usageKey(r);if(map.has(k)&&JSON.stringify(map.get(k))!==JSON.stringify(r))bad.add(k);else map.set(k,r);}for(const k of bad)map.delete(k);return map;}
 async function loadUsageSnaps(force=false){if(usageLoading||(!force&&usageSnaps))return;usageLoading=true;usageError='';renderUsage();const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),12000);try{const res=await fetch('./data/snap_counts.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!res.ok)throw Error('HTTP '+res.status);const d=await res.json();if(!Array.isArray(d.records)||typeof d.ok!=='boolean')throw Error('Formato no válido');usageSnaps=d;usageIndex=makeUsageIndex(d.records);}catch(e){usageError=String(e.message||e);usageSnaps=null;usageIndex=null;}finally{clearTimeout(timer);usageLoading=false;renderUsage();}}
-function renderUsage(){const el=$('usageOutput');if(!el)return;const player=$('player').value.trim(),year=Number($('season').value),cut=Number($('cutoff').value);el.className='status warn';if(dataset.seed_mode||!player||!Number.isInteger(year)||!Number.isInteger(cut)||cut<1||cut>23){el.textContent='Carga estadísticas reales y selecciona jugador, temporada y corte válidos.';return;}
+function renderUsage(){renderAnomaly();const el=$('usageOutput');if(!el)return;const player=$('player').value.trim(),year=Number($('season').value),cut=Number($('cutoff').value);el.className='status warn';if(dataset.seed_mode||!player||!Number.isInteger(year)||!Number.isInteger(cut)||cut<1||cut>23){el.textContent='Carga estadísticas reales y selecciona jugador, temporada y corte válidos.';return;}
  // All records for the selected player; use a synthetic valid field to avoid conditioning on the chosen market.
  const q=matchupRows(dataset.records.filter(r=>String(r.player||'').trim().toLowerCase()===player.toLowerCase()).map(r=>({...r,_usage:1})),player,year,cut,'_usage');if(q.ambiguous){el.textContent='Identidad ambigua; no se mezclan jugadores.';return;}const rows=q.rows.filter(r=>Number(r.season)===year),last=rows.slice(-5);if(!rows.length){el.textContent='No hay registros de temporada anteriores al corte.';return;}
  const totals=usageTeamTotals(dataset.records,year,cut),get=k=>r=>usageValid(r[k]),snap=k=>r=>usageValid(usageIndex?.get(usageKey(r))?.[k]),ratio=(a,b,s=1,bounded=false)=>rs=>usageRatio(rs,get(a),get(b),s,bounded),mean=k=>rs=>usageMean(rs,get(k)),snapmean=k=>rs=>usageMean(rs,snap(k));
@@ -946,6 +947,60 @@ $('refreshUsage').addEventListener('click',()=>{renderUsage();loadUsageSnaps(tru
 for(const id of ['player','season','cutoff'])$(id).addEventListener('change',renderUsage);
 document.querySelector('[data-tab="modelo"]').addEventListener('click',()=>{renderUsage();loadUsageSnaps();});
 renderUsage();
+
+// Fase 3.6: alertas cronológicas descriptivas; no intervienen en el modelo.
+function anomalyMedian(a){const b=a.slice().sort((x,y)=>x-y),n=b.length;return n?(b[Math.floor((n-1)/2)]+b[Math.floor(n/2)])/2:null;}
+function anomalyValue(v,kind){const n=usageValid(v);return n===null||!Number.isFinite(n)||(kind==='snap'&&(n<0||n>100))||(kind==='volume'&&(!Number.isInteger(n)||n<0))?null:n;}
+function anomalyScan(rows,market,index){
+ const snap=r=>anomalyValue(index?.get(usageKey(r))?.share_pct,'snap');
+ const volumeKey=r=>({QB:'attempts',RB:'carries',FB:'carries',WR:'targets',TE:'targets'})[String(r.position||'').toUpperCase()];
+ const context=r=>r.player_id&&r.team&&r.position?[r.player_id,r.season,matchupTeam(r.team),r.position].join('|'):null;
+ const result=[];
+ for(let i=0;i<rows.length;i++){
+  const r=rows[i],key=context(r),history=[];for(let j=i-1;j>=0&&history.length<5;j--){if(!key||context(rows[j])!==key)break;history.unshift(rows[j]);}
+  const prior=(getter,min=3)=>{const v=history.map(getter).filter(x=>x!==null);return {n:v.length,median:v.length>=min?anomalyMedian(v):null,values:v};};
+  const s=snap(r),sb=prior(snap),vk=volumeKey(r),getVol=x=>vk?anomalyValue(x[vk],'volume'):null,v=getVol(r),vb=prior(getVol),m=anomalyValue(r[market],'stat'),mb=prior(x=>anomalyValue(x[market],'stat'),5);
+  const snapEvaluated=s!==null&&sb.median!==null&&sb.median>=40;
+  const lowSnap=snapEvaluated&&s<=0.6*sb.median&&sb.median-s>=20;
+  const floor=vk==='attempts'?10:4;
+  const lowVolume=v!==null&&vb.median!==null&&vb.median>=floor&&v<=0.5*vb.median;
+  const mad=mb.median===null?null:anomalyMedian(mb.values.map(x=>Math.abs(x-mb.median)));
+  const z=mad>0&&m!==null?0.67448975*(m-mb.median)/mad:null;
+  const outlier=z!==null&&Math.abs(z)>=3.5;
+  const prev=result[i-1];const recovery=!!(prev&&key&&context(prev.r)===key&&prev.lowSnap&&s!==null&&s>=prev.sb.median-15&&s-prev.s>=20);
+  result.push({r,s,sb,snapEvaluated,lowSnap,v,vb,vk,lowVolume,m,mb,z,outlier,recovery});
+ }
+ return result;
+}
+function anomalyTrend(rows,get,kind){const a=rows.slice(-6,-3).map(get),b=rows.slice(-3).map(get);if(a.length!==3||b.length!==3||[...a,...b].some(x=>x===null))return null;const mean=x=>x.reduce((s,v)=>s+v,0)/x.length;const x=mean(a),y=mean(b),delta=y-x;return {x,y,delta,flag:kind==='snap'?Math.abs(delta)>=15:x>=(kind==='attempts'?10:4)&&Math.abs(delta)>=x*.3};}
+function renderAnomaly(){
+ const el=$('anomalyOutput');if(!el)return;el.className='status warn';const player=$('player').value.trim(),year=Number($('season').value),cut=Number($('cutoff').value),market=$('market').value;
+ if(dataset.seed_mode||!player||!MARKET[market]||!Number.isInteger(year)||!Number.isInteger(cut)||cut<1||cut>23){el.textContent='Carga estadísticas reales y selecciona jugador, mercado y corte válidos.';return;}
+ const q=matchupRows(dataset.records.filter(r=>String(r.player||'').trim().toLowerCase()===player.toLowerCase()).map(r=>({...r,_usage:1})),player,year,cut,'_usage');if(q.ambiguous){el.textContent='Identidad ambigua; no se mezclan jugadores.';return;}
+ const rows=q.rows.filter(r=>Number(r.season)===year);if(!rows.length){el.textContent='Sin registros anteriores al corte.';return;}
+ const scan=anomalyScan(rows,market,usageSnaps?.seasons?.[year]?.ok?usageIndex:null),f=(v,s='')=>v===null||v===undefined||!Number.isFinite(v)?'—':num(v)+s;
+ const table=(head,body)=>'<div class="tablebox"><table class="tbl"><thead><tr>'+head.map(v=>'<th>'+esc(v)+'</th>').join('')+'</tr></thead><tbody>'+body.map(r=>'<tr>'+r.map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ const labels={attempts:'Intentos de pase',targets:'Targets',carries:'Acarreos'};
+ const count=k=>scan.filter(x=>x[k]).length,coverage=scan.filter(x=>x.s!==null).length;
+ let html='<b>'+esc(player)+' · '+esc(MARKET[market])+'</b><br>'+year+' · antes de semana '+cut+' · '+rows.length+' registros · snaps enlazados '+coverage+'/'+rows.length+'.';
+ if(q.conflicts)html+='<p>Registros conflictivos excluidos: '+q.conflicts+'.</p>';
+ html+='<p class="subtle">'+esc(usageLoading?'Consultando snaps…':coverage?'Fuente de participación: nflverse/PFR.':'Sin snaps válidos enlazados; no se evalúan bajas de participación.')+'</p>';
+ html+='<div class="pills">'+[['Snap bajo',count('lowSnap')],['Volumen bajo',count('lowVolume')],['Resultado atípico',count('outlier')],['Repunte de snaps',count('recovery')]].map(([k,v])=>'<span class="pill">'+esc(k)+': '+v+'</span>').join('')+'</div>';
+ html+='<p class="subtle">Snap bajo: '+count('snapEvaluated')+'/'+rows.length+' registros evaluables. Las alertas pueden coincidir; no son diagnósticos de lesión ni causas verificadas.</p><h3>Alertas por partido</h3>';
+ html+=table(['Sem.','Rival','Snap % / base','Volumen / base','Resultado / base','Alertas'],scan.slice().reverse().map(x=>[x.r.week,x.r.opponent,f(x.s,'%')+' / '+f(x.sb.median,'%'),(labels[x.vk]||'Volumen')+': '+f(x.v)+' / '+f(x.vb.median),f(x.m)+' / '+f(x.mb.median),[x.lowSnap?'Snap bajo':'',x.lowVolume?'Volumen bajo':'',x.outlier?(x.z<0?'Resultado atípico bajo':'Resultado atípico alto'):'',x.recovery?'Repunte de snaps':''].filter(Boolean).join(' · ')||(!x.snapEvaluated?'Sin alerta; snap no evaluable':'Sin alerta detectada')]));
+ html+='<h3>Comparación de sensibilidad</h3>';
+ const summary=(label,items)=>{const s=matchupStats(items.map(x=>x.r),market);return [label,s.n,f(s.avg),f(s.median),f(s.sd)];};
+ html+=table(['Muestra','N','Media','Mediana','DE'],[summary('Todos los registros',scan),summary('Sin alertas de snap bajo',scan.filter(x=>!x.lowSnap)),summary('Snap evaluable sin alerta',scan.filter(x=>x.snapEvaluated&&!x.lowSnap)),summary('Snap bajo detectado',scan.filter(x=>x.lowSnap))]);
+ html+='<p class="subtle">La segunda fila conserva registros sin snaps y sin base suficiente. La tercera solo usa partidos evaluables. Comparación exploratoria retrospectiva: no se borra ningún partido del historial ni se ajusta la proyección.</p>';
+ html+='<h3>Tendencia de rol · últimos 3 vs. 3 anteriores</h3>';
+ const recent=scan.slice(-6),last=recent.at(-1),same=recent.length===6&&last.r.player_id&&last.r.team&&last.r.position&&recent.every(x=>x.r.player_id===last.r.player_id&&matchupTeam(x.r.team)===matchupTeam(last.r.team)&&x.r.position===last.r.position);
+ const trends=same?[['Snap %',anomalyTrend(recent,x=>x.s,'snap'),'%',' pp'],[labels[last.vk]||'Volumen',anomalyTrend(recent,x=>x.v,last.vk),'','']]:[];
+ html+=trends.length?table(['Indicador','3 anteriores','Últimos 3','Cambio','Señal'],trends.map(([k,t,s,d])=>[k,f(t?.x,s),f(t?.y,s),t?(t.delta>0?'+':'')+f(t.delta,d):'—',t?(t.flag?'Cambio a revisar':'Sin cambio marcado'):'Datos insuficientes'])):'<p class="subtle">Se requieren seis registros consecutivos del mismo equipo, jugador y posición.</p>';
+ html+='<p class="subtle">Reglas heurísticas, no validadas: base = mediana de hasta 5 registros previos consecutivos del mismo jugador/equipo/posición y temporada (mínimo 3 válidos para snaps y volumen). Snap bajo: base ≥40%, valor ≤60% de la base y caída ≥20 puntos. Volumen bajo: valor ≤50% de la base; base ≥10 intentos QB o ≥4 targets WR/TE o acarreos RB/FB. Resultado atípico: 5 previos válidos y |z robusto| ≥3.5 (MAD positivo); si MAD=0 no se evalúa. Repunte: siguiente registro del mismo contexto vuelve a no más de 15 puntos por debajo de la base previa y gana ≥20 puntos. Tendencia: cambio ≥15 pp en snaps o ≥30% en volumen respecto a los tres previos (con base mínima). No se infieren causas, titularidad ni partidos ausentes. Las señales no modifican el modelo.</p>';
+ el.innerHTML=html;el.className='status '+(coverage?'':'warn');
+}
+$('refreshAnomaly').addEventListener('click',()=>{renderAnomaly();loadUsageSnaps(true);});
+$('market').addEventListener('change',renderAnomaly);
 
 </script>
 </body></html>
