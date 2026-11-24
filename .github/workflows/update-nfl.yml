@@ -8,18 +8,21 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/update-nfl.yml'
+      - 'index.html'
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
-  publicar:
+  preparar:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Descargar estadisticas NFL de nflverse
@@ -71,6 +74,37 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
+          name: github-pages
           path: .
+
+  publicar:
+    needs: preparar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Confirmar disponibilidad del paquete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for intento in {1..12}; do
+            if cantidad=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq '[.artifacts[] | select(.name == "github-pages" and .expired == false)] | length'); then
+              if [ "$cantidad" = "1" ]; then
+                echo 'Paquete listo para publicar'
+                exit 0
+              fi
+              if [ "$cantidad" -gt 1 ]; then
+                echo 'Se encontraron paquetes duplicados'
+                exit 1
+              fi
+            fi
+            echo "Paquete aun no disponible: intento $intento"
+            sleep 10
+          done
+          echo 'No se pudo confirmar el paquete github-pages'
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
