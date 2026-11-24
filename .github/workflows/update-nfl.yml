@@ -1,0 +1,76 @@
+name: BORU NFL - Estadisticas
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 13 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-nfl.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar estadisticas NFL de nflverse
+        run: |
+          python3 - <<'PY'
+          import csv, datetime, io, json, math, pathlib, urllib.request
+          now = datetime.datetime.now(datetime.timezone.utc)
+          seasons = [now.year-1, now.year] if now.month >= 8 else [now.year-2, now.year-1]
+          fields = ['passing_yards','attempts','completions','rushing_yards','carries','receiving_yards','receptions','targets']
+          records = []
+          for season in seasons:
+              url = f'https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv'
+              req = urllib.request.Request(url, headers={'User-Agent':'BORU-NFL/1.0'})
+              with urllib.request.urlopen(req, timeout=120) as response:
+                  rows = csv.DictReader(io.StringIO(response.read().decode('utf-8-sig')))
+                  count = 0
+                  for r in rows:
+                      if r.get('season_type','REG') != 'REG' or r.get('position') not in ('QB','RB','FB','WR','TE'):
+                          continue
+                      name = (r.get('player_display_name') or r.get('player_name') or '').strip()
+                      if not name or not r.get('week'):
+                          continue
+                      item = {'player':name, 'player_id':r.get('player_id',''),
+                              'position':r.get('position',''), 'team':r.get('team') or r.get('recent_team',''),
+                              'opponent':r.get('opponent_team',''), 'season':int(r.get('season') or season),
+                              'week':int(r['week'])}
+                      for field in fields:
+                          raw = r.get(field)
+                          if field == 'carries' and raw in (None,''):
+                              raw = r.get('rushing_attempts')
+                          try:
+                              num = float(raw)
+                              item[field] = num if math.isfinite(num) else None
+                          except (ValueError,TypeError):
+                              item[field] = None
+                      if not any(item[field] is not None for field in fields):
+                          continue
+                      records.append(item)
+                      count += 1
+              if count < 30:
+                  raise RuntimeError(f'Datos insuficientes para {season}: {count}')
+          pathlib.Path('data').mkdir(exist_ok=True)
+          pathlib.Path('data/player_stats.json').write_text(json.dumps({
+              'source':'nflverse - estadisticas semanales',
+              'updated_at':now.isoformat(), 'seed_mode':False,
+              'records':records}, ensure_ascii=False), encoding='utf-8')
+          print(f'{len(records)} registros preparados')
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
