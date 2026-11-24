@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 2.1 — Radar defensivo</title>
+<title>BÖRU NFL · Fase 2.2 — Radar de lesiones</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -58,7 +58,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 <header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.1</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -109,10 +109,15 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
    </select></div>
       <div><label for="modelLine">Línea Over</label><input id="modelLine" type="number" step="0.5" min="0" value="308.5"></div></div>
 
+      <div class="field" id="injuryRadar"><h2 style="margin-bottom:5px">Radar de lesiones · ESPN</h2>
+      <p class="subtle">Reporte reciente del jugador seleccionado. Fuente secundaria; no confirma participación ni corresponde necesariamente a la semana de corte.</p>
+      <div id="injuryOutput" class="status warn" aria-live="polite">Consultando reporte publicado…</div>
+      <div class="btns"><button type="button" class="btn secondary" id="reloadInjuries">Actualizar consulta</button></div>
+      <p class="subtle"><a href="https://www.espn.com/nfl/injuries" target="_blank" rel="noopener">Reporte ESPN</a> · <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">Reporte oficial NFL</a>. Verifica lista oficial de inactivos antes de confirmar disponibilidad.</p></div>
       <div class="field"><label for="modelAvailability">Disponibilidad del jugador (verificada manualmente)</label><select id="modelAvailability">
         <option value="unknown">Sin verificar — no asumir que jugará</option><option value="active">Confirmado activo / disponible</option><option value="limited">Entrenamiento limitado / Questionable</option><option value="doubtful">Doubtful / situación incierta</option><option value="out">Out / descartado</option>
       </select></div>
-      <p class="subtle">Comprueba estado en <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">reporte oficial NFL</a> y lista de inactivos. No se consultan automáticamente lesiones, sanciones ni estado emocional.</p>
+      <p class="subtle">Comprueba estado en <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">reporte oficial NFL</a> y lista de inactivos. El radar consulta una fuente secundaria de lesiones; no verifica inactivos, sanciones, prácticas ni estado emocional automáticamente.</p>
       <div class="field"><label for="teamNotes">Cambios de rol, bajas ofensivas o noticias verificadas (notas manuales)</label><input id="teamNotes" placeholder="Ej.: WR titular OUT (confirmado por equipo)" maxlength="240"></div>
       <div class="field"><label style="display:flex;align-items:flex-start;gap:8px;line-height:1.5"><input id="modelOddsVerified" type="checkbox" style="width:18px;height:18px;margin-top:2px"> Confirmé que actualicé los momios y líneas del Comparador para este jugador y partido.</label></div>
       <div class="btns"><button class="btn primary" id="runModel">Analizar Over / Under</button></div>
@@ -414,6 +419,42 @@ for(const id of ['player','market','season','cutoff','modelOpp','modelLine'])$(i
 $('checkWeather').addEventListener('click',checkWeather);
 $('stadium').addEventListener('change',()=>{$('otherCoords').hidden=$('stadium').value!=='OTHER';});
 document.querySelector('[data-tab="modelo"]').addEventListener('click',()=>{modelSelectLabel();renderOpponentDefense();});
+
+
+// Fase 2.2: reporte reciente, separado del modelo y de la prueba retrospectiva.
+let injuryData=null, injuryRequest=0;
+const injuryName=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const injuryDate=v=>{const d=new Date(v);return v&&Number.isFinite(d.getTime())?d.toLocaleString('es-MX'):'Sin fecha informada';};
+function injuryTone(status){const s=String(status||'').toLowerCase();if(/^(out|inactive|injured reserve|ir|pup|suspended)$/.test(s))return 'error';return 'warn';}
+function renderInjury(){
+ const el=$('injuryOutput'); if(!el)return;
+ el.className='status warn';
+ if(!injuryData){el.textContent='Reporte sin cargar. Consulta nuevamente o revisa el reporte oficial.';return;}
+ const stamp=injuryDate(injuryData.fetched_at), age=(Date.now()-Date.parse(injuryData.fetched_at))/3600000;
+ if(!injuryData.ok){el.textContent='Fuente secundaria no disponible. Último intento: '+stamp+'. Verifica el reporte oficial.';return;}
+ if(!Number.isFinite(age)||age>30||age< -1){el.textContent='Reporte sin fecha válida o desactualizado (más de 30 h). Consulta el reporte oficial. Última descarga: '+stamp;return;}
+ const player=$('player').value.trim(), season=Number($('season').value);
+ if(!player){el.textContent='Selecciona un jugador.';return;}
+ if(injuryData.season&&Number(injuryData.season)!==season){el.textContent='El reporte de ESPN es de otra temporada; no se utiliza para el corte seleccionado.';return;}
+ const matches=injuryData.records.filter(r=>injuryName(r.name)===injuryName(player));
+ if(!matches.length){el.textContent=player+': sin coincidencia en el reporte consultado. NO significa que esté sano o activo. Descarga: '+stamp;return;}
+ if(matches.length!==1){el.textContent='Hay varias coincidencias para '+player+'. Confirma identidad y equipo en el reporte oficial.';return;}
+ const r=matches[0];el.className='status '+injuryTone(r.status);
+ el.innerHTML='<b>'+esc(r.name)+' · '+esc(r.team||r.team_name||'Equipo sin informar')+'</b><br>Estado ESPN: <b>'+esc(r.status)+'</b><br>Lesión: '+esc(r.injury||'Sin detalle informado')+'<br>Fecha del reporte: '+esc(injuryDate(r.date))+'<br>Descarga: '+esc(stamp)+'<br><span class="subtle">Reporte reciente, no histórico. No modifica la estimación ni confirma disponibilidad. Contrasta con la NFL.</span>';
+}
+async function loadInjuries(){
+ const id=++injuryRequest, el=$('injuryOutput'); el.className='status warn';el.textContent='Consultando último reporte publicado…';
+ const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),9000);
+ try{const res=await fetch('./data/injuries.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!res.ok)throw Error('HTTP '+res.status);const j=await res.json();if(!Array.isArray(j.records))throw Error('Formato inválido');if(id!==injuryRequest)return;injuryData=j;}
+ catch(e){if(id!==injuryRequest)return;injuryData=null;}
+ finally{clearTimeout(timer);if(id===injuryRequest)renderInjury();}
+}
+$('reloadInjuries').addEventListener('click',loadInjuries);
+for(const id of ['player','season','cutoff'])$(id).addEventListener('change',()=>{$('modelAvailability').value='unknown';$('teamNotes').value='';renderInjury();});
+$('modelOpp').addEventListener('change',()=>{$('modelAvailability').value='unknown';$('teamNotes').value='';});
+$('modelAvailability').addEventListener('change',invalidateModel);
+$('analyze').addEventListener('click',()=>{invalidateModel();renderInjury();});
+document.querySelector('[data-tab="modelo"]').addEventListener('click',loadInjuries);
 
 </script>
 </body></html>
