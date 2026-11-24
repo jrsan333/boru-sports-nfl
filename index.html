@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 2.4 — News Radar</title>
+<title>BÖRU NFL · Fase 2.5 — Team Impact</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -55,14 +55,16 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 .player-profile{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:10px;background:#102333;border:1px solid #315466;border-radius:13px;color:var(--txt)}
 .player-photo{width:88px;height:76px;flex:0 0 88px;display:grid;place-items:center;background:#1c3443;border-radius:10px;overflow:hidden;color:var(--muted);font-size:30px}
 .player-photo img{width:100%;height:100%;object-fit:contain;grid-area:1/1}.player-photo span{grid-area:1/1}.player-profile .identity{flex:1;min-width:0;overflow-wrap:anywhere}.player-profile .identity b{font-size:16px}.team-logo{width:35px;height:35px;object-fit:contain;flex-shrink:0}.source-row{padding:9px 0;border-top:1px solid #ffffff20}.source-row b{display:block}.profile-note{display:block;margin-top:7px;font-size:11px}
+
+#teamImpactOutput{margin-top:12px}.impact-person{border-left:3px solid #547b88;padding:8px 10px;margin:9px 0;background:rgba(10,24,35,.3);border-radius:6px;overflow-wrap:anywhere}.impact-person.error{border-left-color:#e37676}.impact-person.warn{border-left-color:#e0ad60}.impact-person .subtle{font-size:.88em}
 </style>
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v2.4.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v2.5.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.4</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.5</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -124,6 +126,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
       </select></div>
       <p class="subtle">Comprueba estado en <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">reporte oficial NFL</a> y lista de inactivos. El radar consulta una fuente secundaria de lesiones; no verifica inactivos, sanciones, prácticas ni estado emocional automáticamente.</p>
       <div class="field" id="newsRadar"><h2>News Radar · Noticias recientes</h2><p class="subtle">Titulares de los últimos 21 días que mencionan al jugador o a su equipo. Etiquetas por palabras clave; no son diagnósticos, sanciones confirmadas ni análisis emocional. No modifican la estimación.</p><div id="newsOutput" class="status warn" aria-live="polite">Abre Modelo para consultar noticias.</div><div class="btns"><button type="button" class="btn secondary" id="reloadNews">Actualizar noticias publicadas</button></div><p class="subtle"><a href="https://www.nfl.com/news/" target="_blank" rel="noopener">Noticias NFL</a> · <a href="https://www.nfl.com/transactions/" target="_blank" rel="noopener">Transacciones oficiales</a> · <a href="https://www.espn.com/nfl/" target="_blank" rel="noopener">ESPN NFL</a>. Una ausencia de titulares no confirma que no haya sanciones o lesiones. Revisa las fechas y el artículo original.</p></div>
+      <div class="field" id="teamImpact"><h2>Team Impact · Contexto de compañeros</h2><p class="subtle">Cruza plantilla actual y reportes ESPN. Volumen ofensivo histórico del mismo equipo antes de la semana de corte. No identifica titulares ni predice el efecto de una baja.</p><label for="impactFilter">Grupo de posición</label><select id="impactFilter"><option value="QB">Quarterbacks</option><option value="RB">Corredores</option><option value="WR" selected>Receptores</option><option value="TE">Alas cerradas</option><option value="OL">Línea ofensiva</option><option value="ALL">Todos los grupos</option></select><div class="status warn" id="teamImpactOutput" aria-live="polite">Abre Modelo para consultar compañeros.</div><div class="btns"><button type="button" class="btn secondary" id="reloadImpact">Actualizar contexto del equipo</button></div><p class="subtle"><a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">Reporte oficial NFL</a> · <a href="https://www.nfl.com/transactions/" target="_blank" rel="noopener">Transacciones oficiales</a>.</p></div>
       <div class="field"><label for="teamNotes">Cambios de rol, bajas ofensivas o noticias verificadas (notas manuales)</label><input id="teamNotes" placeholder="Ej.: WR titular OUT (confirmado por equipo)" maxlength="240"></div>
       <div class="field"><label style="display:flex;align-items:flex-start;gap:8px;line-height:1.5"><input id="modelOddsVerified" type="checkbox" style="width:18px;height:18px;margin-top:2px"> Confirmé que actualicé los momios y líneas del Comparador para este jugador y partido.</label></div>
       <div class="btns"><button class="btn primary" id="runModel">Analizar Over / Under</button></div>
@@ -204,7 +207,7 @@ $('comparisonOutput').innerHTML=`${($('player').value.trim().toLowerCase()!=='jo
 function renderLadders(){if($('player').value.trim().toLowerCase()!=='joe burrow'||$('market').value!=='passing_yards'||Number($('season').value)!==2026||Number($('cutoff').value)!==12){$('ladders').innerHTML='<p class="muted">La escalera capturada corresponde únicamente a Joe Burrow, pase, 23 nov 2026 (semana 12). Ajusta esos filtros para verla. Los datos históricos no aplican a otros jugadores.</p>';return;}const data=LADDERS.map(([book,label,line,odds])=>{const d=oddsToDecimal(String(odds>0?'+'+odds:odds));const rate=rateFor(line);return `<tr><td>${esc(book)}</td><td>${esc(label)}</td><td>${odds>0?'+':''}${odds}</td><td>${(100/d).toFixed(1)}%</td><td>${rate.hit}/${rate.n}</td></tr>`;}).join('');$('ladders').innerHTML=`<table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Historial*</th></tr></thead><tbody>${data}</tbody></table><p class="subtle">*Calculado con el jugador/mercado/temporada y semana de corte elegidos arriba.</p>`;}
 function parseCSV(raw){if(raw.charCodeAt(0)===65279)raw=raw.slice(1);let rows=[],row=[],field='',quoted=false;for(let i=0;i<raw.length;i++){let c=raw[i];if(c==='"'){if(quoted&&raw[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(field);field='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&raw[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field='';}else field+=c;}row.push(field);if(row.some(x=>x!==''))rows.push(row);if(!rows.length)throw Error('CSV vacío');const header=rows.shift().map(x=>x.toLowerCase().trim());return rows.map(cells=>Object.fromEntries(header.map((k,i)=>[k,cells[i]??''])));}
 function normalizeCsv(csv){const data=[];const valid=['player_display_name','player_name','player'];if(!csv.length||!valid.some(f=>f in csv[0])||!('week' in csv[0])||!('season' in csv[0]))throw Error('Faltan player_display_name/player_name, season o week.');for(const r of csv){const season=Number(r.season),week=Number(r.week);if(!Number.isFinite(season)||!Number.isFinite(week)||week<=0||r.season_type&&r.season_type!=='REG')continue;const item={player:String(r.player_display_name||r.player_name||r.player||'').trim(),player_id:r.player_id||r.player_gsis_id||'',position:r.position||'',season,week,team:r.team||r.recent_team||'',opponent:r.opponent_team||''};for(const m of Object.keys(MARKET)){const column=m==='carries'?(r.carries??r.rushing_attempts):r[m];item[m]=column==null||column===''?null:Number(column);}if(!item.player||!Object.keys(MARKET).some(m=>Number.isFinite(item[m])))continue;data.push(item);}if(!data.length)throw Error('No hay partidos regulares con estadísticas válidas.');return {source:'CSV importado manualmente',updated_at:new Date().toISOString(),seed_mode:false,records:data};}
-$('analyze').addEventListener('click',()=>{renderPlayer();compare();renderLadders();});$('compare').addEventListener('click',compare);$('reloadData').addEventListener('click',loadData);$('csvFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>50_000_000)throw Error('El archivo excede los 50 MB');const raw=await f.text();dataset=normalizeCsv(parseCSV(raw));header();renderAll();$('csvStatus').textContent=`Importados ${dataset.records.length} registros desde ${f.name}.`;$('csvStatus').className='status';}catch(err){$('csvStatus').textContent='Error al importar: '+err.message;$('csvStatus').className='status error';}});
+$('analyze').addEventListener('click',()=>{renderPlayer();compare();renderLadders();});$('compare').addEventListener('click',compare);$('reloadData').addEventListener('click',loadData);$('csvFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>50_000_000)throw Error('El archivo excede los 50 MB');const raw=await f.text();dataset=normalizeCsv(parseCSV(raw));header();renderAll();renderTeamImpact();$('csvStatus').textContent=`Importados ${dataset.records.length} registros desde ${f.name}.`;$('csvStatus').className='status';}catch(err){$('csvStatus').textContent='Error al importar: '+err.message;$('csvStatus').className='status error';}});
 $('market').addEventListener('change',()=>{renderPlayer();compare();renderLadders();});
 
 loadData();
@@ -514,7 +517,7 @@ async function loadInjuries(){
  const id=++injuryRequest,el=$('injuryOutput');el.className='status warn';el.textContent='Consultando reportes publicados…';
  const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),12000);
  async function get(path){try{const res=await fetch(path+'?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!res.ok)throw Error('HTTP '+res.status);const j=await res.json();if(!Array.isArray(j.records))throw Error('Formato inválido');return j;}catch(e){return null;}}
- try{const [i,r]=await Promise.all([get('./data/injuries.json'),get('./data/rosters.json')]);if(id!==injuryRequest)return;injuryData=i;rosterData=r;renderInjury();if(availabilityBlock())invalidateModel();}finally{clearTimeout(timer);}
+ try{const [i,r]=await Promise.all([get('./data/injuries.json'),get('./data/rosters.json')]);if(id!==injuryRequest)return;injuryData=i;rosterData=r;renderInjury();renderTeamImpact();if(availabilityBlock())invalidateModel();}finally{clearTimeout(timer);}
 }
 $('reloadInjuries').addEventListener('click',loadInjuries);
 for(const id of ['player','season','cutoff'])$(id).addEventListener('change',()=>{$('modelAvailability').value='unknown';$('teamNotes').value='';renderInjury();});
@@ -583,7 +586,7 @@ function applySmartMatch(){
  const opp=g.home===t?g.away:g.home;
  if(!Array.from($('modelOpp').options).some(o=>o.value===opp)){matchStatus('Abreviatura del rival no reconocida; selecciona manualmente.');return;}
  $('cutoff').value=String(g.week);$('modelOpp').value=opp;
- clearContextInputs();renderPlayer();compare();renderLadders();invalidateModel();renderInjury();
+ clearContextInputs();renderPlayer();compare();renderLadders();invalidateModel();renderInjury();renderTeamImpact();
  const venue=venueAliases.find(v=>v[0].test(g.stadium||''));
  const roof=String(g.roof||'').toLowerCase();$('roof').value=roof==='dome'||roof==='closed'?'closed':roof==='outdoors'||roof==='open'?'open':'unknown';
  $('weatherOutput').className='status warn';$('stadium').value='';$('kickoff').value='';$('otherCoords').hidden=true;
@@ -599,6 +602,59 @@ $('reloadSchedule').addEventListener('click',async()=>{await loadInjuries();awai
 $('applySchedule').addEventListener('click',applySmartMatch);
 for(const id of ['player','season','cutoff','modelOpp'])$(id).addEventListener('change',()=>{$('stadium').value='';$('kickoff').value='';$('otherCoords').hidden=true;$('weatherOutput').className='status warn';$('weatherOutput').textContent='Contexto cambiado. Consulta nuevamente el clima.';});
 for(const id of ['player','season'])$(id).addEventListener('change',()=>{if(scheduleData)renderSmartMatch($('page-modelo').classList.contains('active'));});
+
+// Fase 2.5: contexto del equipo y volumen observado antes del corte.
+const impactGroups=[['QB','Quarterbacks',['QB']],['RB','Corredores',['RB','FB']],['WR','Receptores',['WR']],['TE','Alas cerradas',['TE']],['OL','Línea ofensiva',['OL','OT','OG','C','G','T','LT','RT','LG','RG','IOL','OC','T/G','G/C']]];
+const impactTeam=t=>({LAR:'LA',JAX:'JAC',WSH:'WAS'}[String(t||'').toUpperCase()]||String(t||'').toUpperCase());
+const impactNum=v=>v===null||v===undefined||v===''||!Number.isFinite(Number(v))?null:Number(v);
+function impactGroup(pos){return impactGroups.find(g=>g[2].includes(String(pos||'').toUpperCase()))?.[0]||'';}
+function impactReport(r,reports){
+ const id=String(r.espn_id||'');let pool=reports.filter(p=>/^\d+$/.test(id)?String(p.id)===id:injuryName(p.name)===injuryName(r.name)&&impactTeam(p.team)===impactTeam(r.team));
+ if(!pool.length||new Set(pool.map(p=>String(p.id||p.name))).size!==1)return null;
+ pool=pool.slice().sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0));return uniqueRecord(pool.filter(p=>p.date===pool[0].date));
+}
+function impactVolume(rows,group){
+ const keys=group==='QB'?['attempts']:group==='RB'?['carries','targets']:group==='WR'||group==='TE'?['targets']:[];
+ const totals=keys.map(k=>{const vals=rows.map(r=>impactNum(r[k])).filter(v=>v!==null);return {key:k,total:vals.length?vals.reduce((a,b)=>a+b,0):null};});
+ const games=new Set(rows.map(r=>r.week)).size;
+ return {games,totals,rank:totals.some(t=>t.total!==null)?totals.reduce((a,t)=>a+(t.total??0),0):-1};
+}
+function buildImpact(rosters,reports,statsRows,selected,season,cutoff){
+ const team=impactTeam(selected.team),sid=String(selected.gsis_id||'');
+ const teamRows=statsRows.filter(r=>Number(r.season)===season&&Number(r.week)>0&&Number(r.week)<cutoff&&impactTeam(r.team)===team);
+ const grouped=new Map();for(const r of rosters){if(impactTeam(r.team)!==team||!impactGroup(r.position))continue;const key=String(r.gsis_id||'');if(!key||key===sid)continue;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(r);}
+ const results=[];let ambiguous=0;
+ for(const [id,records] of grouped){const r=uniqueRecord(records);if(!r){ambiguous++;continue;}const group=impactGroup(r.position),p=impactReport(r,reports),rc=rosterCode(r),fresh=currentRoster(r),pf=currentReport(p),pk=injuryKey(p?.status);
+ const unavailable=(fresh&&reservedCodes.has(rc))||(pf&&/^(out|inactive|ir|injured reserve|pup|suspended|doubtful)$/.test(pk));
+ const watch=unavailable||!fresh||rc!=='ACT'||(p&&(!pf||!['active','available','healthy'].includes(pk)));
+ const volume=impactVolume(teamRows.filter(s=>String(s.player_id||'')===id),group);
+ results.push({r,p,rc,fresh,pf,group,unavailable,watch,volume});}
+ return {results,ambiguous};
+}
+function renderTeamImpact(){
+ const el=$('teamImpactOutput');if(!el)return;const {player,season,roster}=profileMatch(),cutoff=Number($('cutoff').value),filter=$('impactFilter').value;
+ if(!roster||!currentRoster(roster)||!Number.isFinite(cutoff)||cutoff<1){el.className='status warn';el.textContent='Sin plantilla reciente inequívoca para este jugador y corte. No se infieren compañeros ni bajas.';return;}
+ const reports=injuryData?.ok&&(!injuryData.season||Number(injuryData.season)===season)?injuryData.records:[];
+ const {results,ambiguous}=buildImpact(rosterData.records,reports,dataset.seed_mode?[]:dataset.records,roster,season,cutoff);
+ const alerts=results.filter(x=>x.unavailable).length,watch=results.filter(x=>x.watch&&!x.unavailable).length;
+ el.className='status '+(alerts||watch||!reports.length?'warn':'');
+ let html='<b>'+esc(impactTeam(roster.team))+' · Compañeros ofensivos</b><br>Plantilla semana '+esc(rosterData.week)+' · '+esc(injuryDate(rosterData.source_modified))+'<br><span class="subtle">'+results.length+' compañeros identificados · '+alerts+' en reserva/no activos o con reporte desfavorable reciente · '+watch+' por revisar. '+(ambiguous?ambiguous+' registros ambiguos excluidos. ':'')+(reports.length&&recentStamp(injuryData?.fetched_at)?'ESPN consultado: '+esc(injuryDate(injuryData.fetched_at)):'ESPN no disponible o desactualizado.')+'</span>';
+ const names={attempts:'intentos de pase',carries:'acarreos',targets:'targets'};
+ for(const [group,label] of impactGroups){if(filter!=='ALL'&&filter!==group)continue;const rows=results.filter(x=>x.group===group).sort((a,b)=>Number(b.unavailable)-Number(a.unavailable)||Number(b.watch)-Number(a.watch)||b.volume.rank-a.volume.rank||a.r.name.localeCompare(b.r.name));
+ html+='<div class="source-row"><b>'+esc(label)+' · '+rows.length+'</b>';
+ if(!rows.length){html+='<span class="subtle">Sin registros identificados.</span></div>';continue;}
+ for(const x of rows){const {r,p,rc,fresh,pf,volume}=x;const cls=x.unavailable?'error':x.watch?'warn':'';
+ html+='<div class="impact-person '+cls+'"><b>'+esc(r.name)+' · '+esc(r.position)+'</b><div>'+esc(rosterLabels[rc]||rc||'Estado desconocido')+(fresh?'':' · por verificar')+'</div>';
+ if(p)html+='<div class="subtle">ESPN: '+esc(injuryLabels[injuryKey(p.status)]||p.status)+' · '+esc(injuryDetail(p))+' · '+esc(injuryDate(p.date))+(pf?'':' · fecha antigua/no confirmada')+'</div>';
+ else html+='<div class="subtle">ESPN: sin reporte coincidente; no confirma salud.</div>';
+ const vs=volume.totals.filter(t=>t.total!==null).map(t=>esc(t.total)+' '+names[t.key]);
+ html+='<div class="subtle">'+(group==='OL'?'Sin datos de snaps ni titularidad de línea ofensiva.':vs.length?vs.join(' · ')+' · '+volume.games+' juegos con registros (antes de semana '+cutoff+')':'Sin volumen registrado para este equipo y corte.')+'</div></div>';}
+ html+='</div>';}
+ el.innerHTML=html+'<span class="profile-note">Contexto de plantilla actual, no lista oficial de titulares ni inactivos. El volumen es histórico del mismo equipo y no prueba un cambio de rol. No modifica la estimación ni se usa en pruebas retrospectivas.</span>';
+}
+$('impactFilter').addEventListener('change',renderTeamImpact);
+$('reloadImpact').addEventListener('click',loadInjuries);
+for(const id of ['player','season','cutoff'])$(id).addEventListener('change',renderTeamImpact);
 
 </script>
 </body></html>
