@@ -366,9 +366,39 @@ jobs:
               except Exception as exc:
                   print('::warning::AUDIT CODY: '+type(exc).__name__+': '+str(exc))
 
+          # Shadow-only identity repair. The published 4.0-A snap dataset remains unchanged.
+          def cody_candidate(players, mapping, stats, source, baseline, year):
+              pid, pfr = '00-0035891', 'WhitCo05'
+              def clean(v):
+                  v=str(v or '').strip()
+                  return '' if v.lower() in ('','na','nan','null','none') else v
+              def name(v): return ' '.join(clean(v).lower().split())
+              target=[r for r in players if clean(r.get('gsis_id'))==pid]
+              if not target or any(clean(r.get('position')).upper()!='WR' or name(r.get('display_name') or r.get('full_name') or (clean(r.get('first_name'))+' '+clean(r.get('last_name'))))!='cody white' or clean(r.get('pfr_id')) not in ('',pfr) for r in target):
+                  raise ValueError('GSIS identity absent or conflicting')
+              if any(clean(r.get('pfr_id'))==pfr and clean(r.get('gsis_id'))!=pid for r in players):
+                  raise ValueError('PFR identity claimed by another or unknown GSIS')
+              if any(k!=pfr and v==pid for k,v in mapping.items()) or mapping.get(pfr) not in (None,pid):
+                  raise ValueError('Existing mapping conflict')
+              raw=[r for r in source if r.get('pfr_player_id')==pfr and r.get('game_type')=='REG' and str(r.get('season'))==str(year)]
+              if not raw or any(name(r.get('player') or r.get('player_name'))!='cody white' for r in raw):
+                  raise ValueError('Snap source identity not corroborated')
+              def key(r): return (int(r['week']),r['team'],r['opponent'])
+              skeys={key(r) for r in stats['records'] if str(r.get('season'))==str(year) and r.get('player_id')==pid and r.get('position')=='WR' and name(r.get('player'))=='cody white'}
+              if len(skeys & {key(r) for r in raw})<2:
+                  raise ValueError('Fewer than two matching WR player-games')
+              candidate=convert(source,{**mapping,pfr:pid},year)
+              before=[r for r in baseline if r['player_id']==pid]
+              after=[r for r in candidate if r['player_id']==pid]
+              if any(r not in after for r in before): raise ValueError('Existing records would change')
+              added=[r for r in after if r not in before and r['share_pct'] is not None]
+              print(f'AUDIT CODY CANDIDATE {year}: baseline={len(before)} candidate={len(after)} added_valid={len(added)} overlapping_games={len(skeys & {key(r) for r in after})}')
+              return added
+
           def main():
               now=dt.datetime.now(dt.timezone.utc); latest=now.year if now.month>=8 else now.year-1
               result={'source':'nflverse / Pro Football Reference','fetched_at':now.isoformat(),'ok':False,'seasons':{},'records':[]}
+              shadow={'protocol':'4.0-A unchanged; candidate only','source':'nflverse / Pro Football Reference','fetched_at':now.isoformat(),'seasons':{},'records':[]}
               try:
                   players=rows('players/players.csv',['gsis_id','pfr_id'])
                   mapping=identity_map(players)
@@ -385,6 +415,13 @@ jobs:
                           data = [r for r in data if r['player_id'] in ids_by_year[year]]
                           if year in (2025,2026):
                               audit_cody(players,mapping,stats,source,data,year)
+                              try:
+                                  added=cody_candidate(players,mapping,stats,source,data,year)
+                                  shadow['records'].extend(added)
+                                  shadow['seasons'][str(year)]={'ok':True,'added_valid':len(added)}
+                              except Exception as exc:
+                                  shadow['seasons'][str(year)]={'ok':False,'error':str(exc)}
+                                  print(f'::warning::AUDIT CODY CANDIDATE {year}: {type(exc).__name__}: {exc}')
                           if not data: raise ValueError('No matched rows')
                           result['records'].extend(data); result['seasons'][str(year)]={'ok':True,'count':len(data)}
                           print(f'Player Usage {year}: {len(data)} records matched by ID')
@@ -395,6 +432,7 @@ jobs:
               result['ok']=bool(result['records'])
               path=pathlib.Path('data/snap_counts.json'); path.parent.mkdir(exist_ok=True)
               path.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+              pathlib.Path('data/snap_counts_cody_candidate.json').write_text(json.dumps(shadow,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
               print(f'Player Usage: {len(result["records"])} records; ok={result["ok"]}')
           if __name__=='__main__': main()
           PY
