@@ -282,6 +282,90 @@ jobs:
           pathlib.Path('data/news.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
           print(f'News Radar: {len(result["records"])} titulares; {sum(s["ok"] for s in result["sources"])} fuentes con datos')
           PY
+      - name: Descargar participacion ofensiva NFL (Player Usage)
+        run: |
+          python3 - <<'PY'
+          """Optional nflverse/PFR snap data for BÖRU NFL. Run before Pages artifact upload."""
+          import csv, datetime as dt, io, json, math, pathlib, urllib.request
+          from collections import defaultdict
+          BASE = 'https://github.com/nflverse/nflverse-data/releases/download/'
+
+          def rows(path, required):
+              req = urllib.request.Request(BASE + path, headers={'User-Agent':'BORU-NFL/1.0'})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  raw = r.read(50_000_001)
+                  if len(raw)>50_000_000: raise ValueError('Source too large: '+path)
+                  raw = raw.decode('utf-8-sig')
+              data = csv.DictReader(io.StringIO(raw))
+              if not set(required).issubset(data.fieldnames or []):
+                  raise ValueError('Missing fields: ' + path)
+              return list(data)
+
+          def number(s, lo, hi):
+              try:
+                  n = float(s)
+                  return n if math.isfinite(n) and lo <= n <= hi else None
+              except (TypeError, ValueError):
+                  return None
+
+          def identity_map(players):
+              pfr, gsis = defaultdict(set), defaultdict(set)
+              for p in players:
+                  a, b = ((p.get(k) or '').strip() for k in ('pfr_id','gsis_id'))
+                  if a and b and a.lower() not in ('na','null','nan','none') and b.lower() not in ('na','null','nan','none'):
+                      pfr[a].add(b); gsis[b].add(a)
+              return {a:next(iter(bs)) for a,bs in pfr.items() if len(bs)==1 and len(gsis[next(iter(bs))])==1}
+
+          def convert(source, mapping, year):
+              source = [r for r in source if r['game_type']=='REG' and str(r['season'])==str(year)]
+              # nflverse uses fractions in some releases; detect a dataset-wide scale from the maximum.
+              vals = [v for r in source if (v:=number(r['offense_pct'],0,100)) is not None]
+              top=max(vals,default=0)
+              if not (0.9<=top<=1 or 90<=top<=100):
+                  raise ValueError('Unrecognized percentage scale')
+              scale=100 if top<=1 else 1
+              records, bad = {}, set()
+              for r in source:
+                  pid=mapping.get(r['pfr_player_id']); week=number(r['week'],1,18)
+                  if not pid or week is None or int(week)!=week or not r['team'] or not r['opponent']: continue
+                  count=number(r['offense_snaps'],0,200); pct=number(r['offense_pct'],0,100/scale)
+                  if count is not None and not count.is_integer(): count=None
+                  if pct is not None: pct=round(pct*scale,4)
+                  if count is None and pct is None: continue
+                  if count==0 and pct not in (None,0) or count and pct==0: pct=None
+                  key=(pid,int(week),r['team'],r['opponent'])
+                  item={'player_id':pid,'season':year,'week':int(week),'team':r['team'],'opponent':r['opponent'],'snaps':count,'share_pct':pct}
+                  if key in records and records[key]!=item: bad.add(key)
+                  else: records[key]=item
+              return [r for k,r in records.items() if k not in bad]
+
+          def main():
+              now=dt.datetime.now(dt.timezone.utc); latest=now.year if now.month>=8 else now.year-1
+              result={'source':'nflverse / Pro Football Reference','fetched_at':now.isoformat(),'ok':False,'seasons':{},'records':[]}
+              try:
+                  mapping=identity_map(rows('players/players.csv',['gsis_id','pfr_id']))
+                  if len(mapping)<1000: raise ValueError('Insufficient identity coverage')
+                  stats = json.loads(pathlib.Path('data/player_stats.json').read_text(encoding='utf-8'))
+                  ids_by_year = defaultdict(set)
+                  for r in stats['records']:
+                      if r.get('player_id'): ids_by_year[int(r['season'])].add(str(r['player_id']).strip())
+                  for year in range(latest-4,latest+1):
+                      try:
+                          data=convert(rows(f'snap_counts/snap_counts_{year}.csv',['season','game_type','week','pfr_player_id','team','opponent','offense_snaps','offense_pct']),mapping,year)
+                          data = [r for r in data if r['player_id'] in ids_by_year[year]]
+                          if not data: raise ValueError('No matched rows')
+                          result['records'].extend(data); result['seasons'][str(year)]={'ok':True,'count':len(data)}
+                          print(f'Player Usage {year}: {len(data)} records matched by ID')
+                      except Exception as exc:
+                          result['seasons'][str(year)]={'ok':False,'count':0}; print(f'::warning::Player Usage {year}: {type(exc).__name__}: {exc}')
+              except Exception as exc:
+                  print(f'::warning::Player Usage identity source: {type(exc).__name__}: {exc}')
+              result['ok']=bool(result['records'])
+              path=pathlib.Path('data/snap_counts.json'); path.parent.mkdir(exist_ok=True)
+              path.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+              print(f'Player Usage: {len(result["records"])} records; ok={result["ok"]}')
+          if __name__=='__main__': main()
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
