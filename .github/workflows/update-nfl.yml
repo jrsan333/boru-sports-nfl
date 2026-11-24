@@ -30,7 +30,8 @@ jobs:
           python3 - <<'PY'
           import csv, datetime, io, json, math, pathlib, urllib.request
           now = datetime.datetime.now(datetime.timezone.utc)
-          seasons = [now.year-1, now.year] if now.month >= 8 else [now.year-2, now.year-1]
+          latest = now.year if now.month >= 8 else now.year-1
+          seasons = list(range(latest-4, latest+1))
           fields = ['passing_yards','attempts','completions','rushing_yards','carries','receiving_yards','receptions','targets']
           records = []
           for season in seasons:
