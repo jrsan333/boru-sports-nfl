@@ -180,6 +180,42 @@ jobs:
           pathlib.Path('data').mkdir(exist_ok=True)
           pathlib.Path('data/schedule.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
           PY
+      - name: Descargar clima historico NFL (nflverse)
+        run: |
+          python3 - <<'PY'
+          import csv, datetime, io, json, math, pathlib, urllib.request
+          now = datetime.datetime.now(datetime.timezone.utc)
+          latest = now.year if now.month >= 8 else now.year-1
+          result = {'source':'nflverse - games.csv','fetched_at':now.isoformat(),'ok':False,'records':[]}
+          def number(x, low, high):
+              try:
+                  v=float(x)
+                  return v if math.isfinite(v) and low<=v<=high else None
+              except (ValueError,TypeError): return None
+          try:
+              req=urllib.request.Request('https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv',headers={'User-Agent':'BORU-NFL/1.0'})
+              with urllib.request.urlopen(req,timeout=60) as response:
+                  rows=csv.DictReader(io.StringIO(response.read().decode('utf-8-sig')))
+                  required={'game_id','season','week','game_type','home_team','away_team','home_score','away_score','roof','temp','wind'}
+                  if not required.issubset(rows.fieldnames or []): raise ValueError('Columnas de clima ausentes')
+                  records=[]
+                  for r in rows:
+                      if r['game_type']!='REG' or r['season'] not in [str(y) for y in range(latest-4,latest+1)]: continue
+                      if number(r['home_score'],0,100) is None or number(r['away_score'],0,100) is None: continue
+                      if not all(r[k] for k in ['game_id','home_team','away_team','week']): continue
+                      records.append({'id':r['game_id'],'season':int(r['season']),'week':int(r['week']),'home':r['home_team'],'away':r['away_team'],'roof':r['roof'].strip().lower(),'temp_f':number(r['temp'],-60,140),'wind_mph':number(r['wind'],0,150)})
+              if len({g['id'] for g in records})!=len(records): raise ValueError('Partidos duplicados')
+              if len(records)<250: raise ValueError('Cobertura insuficiente')
+              result.update(ok=True,records=records)
+              for year in sorted({g['season'] for g in records}):
+                  a=[g for g in records if g['season']==year]
+                  print(f"Clima {year}: {len(a)} partidos REG finalizados; viento {sum(g['wind_mph'] is not None for g in a)}; temperatura {sum(g['temp_f'] is not None for g in a)}")
+              print(f'Weather Impact: {len(records)} partidos historicos')
+          except Exception as exc:
+              print(f'::warning::Clima historico no disponible: {type(exc).__name__}: {exc}')
+          pathlib.Path('data').mkdir(exist_ok=True)
+          pathlib.Path('data/weather_history.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
+          PY
       - name: Descargar titulares NFL (News Radar)
         run: |
           python3 - <<'PY'
