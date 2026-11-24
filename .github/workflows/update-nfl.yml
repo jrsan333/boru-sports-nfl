@@ -222,7 +222,7 @@ jobs:
           import datetime, email.utils, json, pathlib, urllib.request, urllib.parse, xml.etree.ElementTree as ET
           now = datetime.datetime.now(datetime.timezone.utc)
           result = {'fetched_at':now.isoformat(),'ok':False,'sources':[],'records':[]}
-          sources = [('ESPN','https://www.espn.com/espn/rss/nfl/news','rss'),('NFL.com','https://www.nfl.com/sitemap-fast-changing.xml','sitemap'),('CBS Sports','https://www.cbssports.com/rss/headlines/nfl/','rss')]
+          sources = [('ESPN','https://site.api.espn.com/apis/site/v2/sports/football/nfl/news','json'),('NFL.com','https://www.nfl.com/sitemap-fast-changing.xml','sitemap'),('CBS Sports','https://www.cbssports.com/rss/headlines/nfl/','rss')]
           seen = set()
           def add(title, link, date, source):
               title = ' '.join((title or '').split())[:350]
@@ -244,12 +244,24 @@ jobs:
           for source,url,kind in sources:
               before = len(result['records'])
               try:
-                  req = urllib.request.Request(url,headers={'User-Agent':'BORU-NFL/1.0','Accept':'application/xml,text/xml,*/*'})
+                  req = urllib.request.Request(url,headers={'User-Agent':'BORU-NFL/1.0','Accept':'application/json' if kind == 'json' else 'application/xml,text/xml,*/*'})
                   with urllib.request.urlopen(req,timeout=20) as response:
                       raw = response.read(12_000_001)
                   if len(raw)>12_000_000: raise ValueError('feed demasiado grande')
-                  root = ET.fromstring(raw)
-                  if kind == 'rss':
+                  root = ET.fromstring(raw) if kind != 'json' else None
+                  if kind == 'json':
+                      payload = json.loads(raw)
+                      items = payload.get('articles') if isinstance(payload,dict) else None
+                      if not isinstance(items,list) or not items: raise ValueError('JSON sin articulos')
+                      for i in items:
+                          if not isinstance(i,dict): continue
+                          links = i.get('links') or {}
+                          web = links.get('web') or {} if isinstance(links,dict) else {}
+                          if not isinstance(web,dict): continue
+                          title, link, date = i.get('headline'), web.get('href'), i.get('published')
+                          if not all(isinstance(v,str) and v for v in (title,link,date)): continue
+                          add(title,link,date,source)
+                  elif kind == 'rss':
                       items = root.findall('./channel/item')
                       if not items: raise ValueError('RSS sin items')
                       for i in items: add(i.findtext('title'),i.findtext('link'),i.findtext('pubDate'),source)
