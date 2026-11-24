@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 3.7 — Game Context Intelligence</title>
+<title>BÖRU NFL · Fase 3.7.1 — Game Context Intelligence</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -67,7 +67,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.7</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.7.1</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
  <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.4</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
@@ -146,7 +146,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
     <div class="card full" id="matchupCard"><h2>Matchup Intelligence · Fase 3.4</h2><p class="subtle">Historial del jugador, tendencia, localía comprobada, enfrentamientos con el rival y volumen de juego. Usa los filtros de Jugadores y el rival de Modelo.</p><div class="btns"><button type="button" class="btn secondary" id="refreshMatchup">Actualizar análisis histórico</button></div><div class="status warn" id="matchupOutput" aria-live="polite">Cargando datos históricos…</div></div>
     <div class="card full" id="usageCard"><h2>Player Usage Intelligence · Fase 3.5</h2><p class="subtle">Participación, volumen y eficiencia anteriores al corte. Datos descriptivos, sin ajustes automáticos del modelo.</p><div class="btns"><button type="button" class="btn secondary" id="refreshUsage">Actualizar participación</button></div><div id="usageOutput" class="status warn" aria-live="polite">Abre Modelo para consultar los datos.</div></div>
     <div class="card full" id="anomalyCard"><h2>Anomaly Detection · Fase 3.6</h2><p class="subtle">Detecta cambios de participación, volumen y resultados atípicos con una base de partidos anteriores. Las alertas son descriptivas y no modifican las proyecciones.</p><div class="btns"><button type="button" class="btn secondary" id="refreshAnomaly">Actualizar detección</button></div><div class="status warn" id="anomalyOutput" aria-live="polite">Consultando datos…</div></div>
-    <div class="card full" id="contextCard"><h2>Game Context Intelligence · Fase 3.7</h2><p class="subtle">Marcador previo, zona roja, ritmo, descanso y eficiencia de jugadas anteriores al corte. Contexto histórico descriptivo, no ajusta la proyección.</p><div class="btns"><button type="button" class="btn secondary" id="refreshContext">Actualizar contexto de partido</button></div><div class="status warn" id="contextOutput" aria-live="polite">Abre Modelo para consultar el contexto PBP.</div></div>
+    <div class="card full" id="contextCard"><h2>Game Context Intelligence · Fase 3.7.1</h2><p class="subtle">Marcador previo, zona roja, ritmo, descanso y eficiencia de jugadas anteriores al corte. Contexto histórico descriptivo, no ajusta la proyección.</p><div class="btns"><button type="button" class="btn secondary" id="refreshContext">Actualizar contexto de partido</button></div><div class="status warn" id="contextOutput" aria-live="polite">Abre Modelo para consultar el contexto PBP.</div></div>
     <div class="card"><h2>3. Resultado exploratorio</h2>
       <div class="status warn">No es recomendación de apuesta. Si faltan datos o el jugador está descartado, el sistema bloquea la proyección.</div>
       <div id="modelOutput" class="model-output"><p class="muted">Selecciona un jugador, rival y línea, luego pulsa Analizar.</p></div>
@@ -649,7 +649,7 @@ function applySmartMatch(){
  const opp=g.home===t?g.away:g.home;
  if(!Array.from($('modelOpp').options).some(o=>o.value===opp)){matchStatus('Abreviatura del rival no reconocida; selecciona manualmente.');return;}
  $('cutoff').value=String(g.week);$('modelOpp').value=opp;
- clearContextInputs();renderPlayer();compare();renderLadders();invalidateModel();renderInjury();renderTeamImpact();renderNews();
+ clearContextInputs();renderPlayer();compare();renderLadders();invalidateModel();renderInjury();renderTeamImpact();renderNews();renderContext();
  const venue=venueAliases.find(v=>v[0].test(g.stadium||''));
  const roof=String(g.roof||'').toLowerCase();$('roof').value=roof==='dome'||roof==='closed'?'closed':roof==='outdoors'||roof==='open'?'open':'unknown';
  $('weatherOutput').className='status warn';$('stadium').value='';$('kickoff').value='';$('otherCoords').hidden=true;
