@@ -71,6 +71,49 @@ jobs:
               'records':records}, ensure_ascii=False), encoding='utf-8')
           print(f'{len(records)} registros preparados')
           PY
+      - name: Descargar reporte de lesiones ESPN (contexto)
+        run: |
+          python3 - <<'PY'
+          import datetime, json, pathlib, urllib.request
+          now = datetime.datetime.now(datetime.timezone.utc)
+          url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries'
+          result = {'source':'ESPN (fuente secundaria)', 'fetched_at':now.isoformat(), 'ok':False, 'season':None, 'records':[]}
+          try:
+              req = urllib.request.Request(url, headers={'User-Agent':'BORU-NFL/1.0', 'Accept':'application/json'})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  payload = json.load(response)
+              groups = payload.get('injuries')
+              if not isinstance(groups, list) or not groups:
+                  raise ValueError('Sin grupos de lesiones')
+              season = payload.get('season') or {}
+              result['season'] = season.get('year') if isinstance(season, dict) else None
+              records = []
+              for group in groups:
+                  team = group.get('team') or {}
+                  if not isinstance(team, dict): team = {}
+                  abbreviation = team.get('abbreviation') or group.get('abbreviation') or ''
+                  team_name = team.get('displayName') or group.get('displayName') or ''
+                  for injury in group.get('injuries') or []:
+                      athlete = injury.get('athlete') or {}
+                      name = athlete.get('fullName') or athlete.get('displayName') or ''
+                      pos = athlete.get('position') or {}
+                      typ = injury.get('type') or {}
+                      details = injury.get('details') or {}
+                      if not isinstance(details, dict): details = {}
+                      status = injury.get('status') or ''
+                      if not isinstance(status, str): status = ''
+                      if not name or not status: continue
+                      records.append({'name':name, 'id':str(athlete.get('id') or ''), 'team':abbreviation, 'team_name':team_name, 'position':pos.get('abbreviation','') if isinstance(pos,dict) else '', 'status':status, 'injury':details.get('type') or (typ.get('description','') if isinstance(typ,dict) else ''), 'date':injury.get('date') or ''})
+              if not records:
+                  raise ValueError('No se encontraron registros interpretables')
+              result.update(ok=True, records=records)
+              print(f'Lesiones: {len(records)} registros interpretables')
+          except Exception as exc:
+              result['error'] = 'Reporte no disponible o formato no reconocido'
+              print(f'::warning::Fuente secundaria de lesiones no disponible: {type(exc).__name__}')
+          pathlib.Path('data').mkdir(exist_ok=True)
+          pathlib.Path('data/injuries.json').write_text(json.dumps(result, ensure_ascii=False), encoding='utf-8')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
