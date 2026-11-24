@@ -179,6 +179,60 @@ jobs:
           pathlib.Path('data').mkdir(exist_ok=True)
           pathlib.Path('data/schedule.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
           PY
+      - name: Descargar titulares NFL (News Radar)
+        run: |
+          python3 - <<'PY'
+          import datetime, email.utils, json, pathlib, urllib.request, urllib.parse, xml.etree.ElementTree as ET
+          now = datetime.datetime.now(datetime.timezone.utc)
+          result = {'fetched_at':now.isoformat(),'ok':False,'sources':[],'records':[]}
+          sources = [('ESPN','https://www.espn.com/espn/rss/nfl/news','rss'),('NFL.com','https://www.nfl.com/sitemap-fast-changing.xml','sitemap'),('CBS Sports','https://www.cbssports.com/rss/headlines/nfl/','rss')]
+          seen = set()
+          def add(title, link, date, source):
+              title = ' '.join((title or '').split())[:350]
+              try:
+                  u = urllib.parse.urlsplit(link or '')
+                  allowed = {'ESPN':('espn.com',),'NFL.com':('nfl.com',),'CBS Sports':('cbssports.com',)}[source]
+                  if u.scheme not in ('http','https') or not any(u.hostname == d or (u.hostname or '').endswith('.'+d) for d in allowed): return
+                  if not title or not date: return
+                  try: dt = datetime.datetime.fromisoformat(date.replace('Z','+00:00'))
+                  except ValueError: dt = email.utils.parsedate_to_datetime(date)
+                  if dt.tzinfo is None: return
+                  age = (now-dt).total_seconds()/86400
+                  if age < -0.1 or age > 21: return
+                  canonical = urllib.parse.urlunsplit(('https',u.netloc,u.path,'',''))
+                  if canonical in seen: return
+                  seen.add(canonical)
+                  result['records'].append({'title':title,'url':canonical,'published_at':dt.isoformat(),'source':source})
+              except (ValueError,TypeError,OverflowError): return
+          for source,url,kind in sources:
+              before = len(result['records'])
+              try:
+                  req = urllib.request.Request(url,headers={'User-Agent':'BORU-NFL/1.0','Accept':'application/xml,text/xml,*/*'})
+                  with urllib.request.urlopen(req,timeout=20) as response:
+                      raw = response.read(12_000_001)
+                  if len(raw)>12_000_000: raise ValueError('feed demasiado grande')
+                  root = ET.fromstring(raw)
+                  if kind == 'rss':
+                      items = root.findall('./channel/item')
+                      if not items: raise ValueError('RSS sin items')
+                      for i in items: add(i.findtext('title'),i.findtext('link'),i.findtext('pubDate'),source)
+                  else:
+                      ns = {'s':'http://www.sitemaps.org/schemas/sitemap/0.9','n':'http://www.google.com/schemas/sitemap-news/0.9'}
+                      items = root.findall('s:url',ns)
+                      if not items: raise ValueError('Indice sin URLs')
+                      for i in items: add(i.findtext('n:news/n:title',namespaces=ns),i.findtext('s:loc',namespaces=ns),i.findtext('n:news/n:publication_date',namespaces=ns),source)
+                  count = len(result['records'])-before
+                  result['sources'].append({'name':source,'ok':bool(count),'count':count})
+                  print(f'Noticias {source}: {count} titulares recientes')
+              except Exception as exc:
+                  result['sources'].append({'name':source,'ok':False,'count':0})
+                  print(f'::warning::Noticias {source}: {type(exc).__name__}')
+          result['ok'] = any(s['ok'] for s in result['sources'])
+          result['records'].sort(key=lambda r:r['published_at'],reverse=True)
+          pathlib.Path('data').mkdir(exist_ok=True)
+          pathlib.Path('data/news.json').write_text(json.dumps(result,ensure_ascii=False),encoding='utf-8')
+          print(f'News Radar: {len(result["records"])} titulares; {sum(s["ok"] for s in result["sources"])} fuentes con datos')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
