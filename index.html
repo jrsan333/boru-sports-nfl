@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 2.2.2 — Radar de lesiones</title>
+<title>BÖRU NFL · Fase 2.3 — Smart Match</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -62,7 +62,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 <header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.2.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.3</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -92,6 +92,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
     <div class="card"><h2>1. Partido y mercado</h2>
       <p class="subtle">Usa la selección que tienes en «Jugadores». El corte excluye la semana del partido.</p>
       <div class="info-well" id="modelPlayerLabel">Cargando jugador…</div>
+      <div class="field"><h2>Smart Match · Próximo partido</h2><p class="subtle">Consulta el calendario de temporada regular del equipo de la plantilla actual. No sustituye una confirmación de horario oficial.</p><div id="smartMatchOutput" class="status warn" aria-live="polite">Abre Modelo para consultar el calendario.</div><div class="btns"><button class="btn secondary" id="reloadSchedule">Actualizar calendario</button><button class="btn primary" id="applySchedule" disabled>Usar próximo partido</button></div><p class="subtle"><a href="https://www.nfl.com/schedules/" target="_blank" rel="noopener">Calendario oficial NFL</a> · Puedes conservar o cambiar el rival manualmente.</p></div>
       <div class="fields2 field"><div><label for="modelOpp">Rival (abreviatura NFL)</label><select id="modelOpp" aria-label="Selecciona el equipo rival">
     <option value="">Selecciona equipo rival…</option>
     <option value="ARI">ARI · Arizona Cardinals</option><option value="ATL">ATL · Atlanta Falcons</option>
@@ -405,11 +406,12 @@ async function checkWeather(){
   const r=await fetch(url.toString(),{signal:ac.signal});if(!r.ok)throw Error('Respuesta '+r.status);
   const j=await r.json(),idx=j.hourly?.time?.findIndex(t=>t.startsWith(date+'T'+String(hour).padStart(2,'0')));
   if(idx==null||idx<0)throw Error('No existe pronóstico para esa hora');
+  if($('stadium').value!==venue||$('kickoff').value!==raw||$('roof').value!==roof)return;
   const h=j.hourly;
   const val=k=>h[k]?.[idx]??'—';
   el.className='status';
   el.innerHTML=`<b>Pronóstico cerca del estadio para ${esc(raw.replace('T',' '))}</b><br>Temperatura: <b>${esc(val('temperature_2m'))} °C</b> · Viento: <b>${esc(val('wind_speed_10m'))} km/h</b> · Ráfagas: <b>${esc(val('wind_gusts_10m'))} km/h</b><br>Prob. precipitación: <b>${esc(val('precipitation_probability'))}%</b> · Lluvia: <b>${esc(val('precipitation'))} mm</b> · Nieve: <b>${esc(val('snowfall'))} cm</b><br><span class="subtle">${roof==='closed'?'Techo cerrado confirmado: el clima exterior no afecta directamente el juego.':roof==='unknown'?'Techo sin confirmar: no se infiere exposición del partido.':'Estadio abierto: información contextual; aún no modifica la estimación.'} Fuente: Open-Meteo (pronóstico, sujeto a cambios). No se guarda como observación histórica.</span>`;
- }catch(e){el.className='status warn';el.textContent='Pronóstico no disponible: '+e.message+'. Puedes continuar sin clima; la proyección no cambiará.';}finally{clearTimeout(tm);}
+ }catch(e){if($('stadium').value!==venue||$('kickoff').value!==raw||$('roof').value!==roof)return;el.className='status warn';el.textContent='Pronóstico no disponible: '+e.message+'. Puedes continuar sin clima; la proyección no cambiará.';}finally{clearTimeout(tm);}
 }
 $('runModel').addEventListener('click',runModel);
 function invalidateModel(){
@@ -486,7 +488,7 @@ for(const id of ['player','season','cutoff'])$(id).addEventListener('change',()=
 $('modelOpp').addEventListener('change',()=>{$('modelAvailability').value='unknown';$('teamNotes').value='';});
 $('modelAvailability').addEventListener('change',invalidateModel);
 $('analyze').addEventListener('click',()=>{invalidateModel();renderInjury();});
-document.querySelector('[data-tab="modelo"]').addEventListener('click',loadInjuries);
+document.querySelector('[data-tab="modelo"]').addEventListener('click',async()=>{await loadInjuries();await loadSmartMatch(true);});
 
 // Fase 2.2.2: no reutilizar entradas de otro contexto.
 let priorPlayer=$('player').value.trim().toLowerCase();
@@ -514,6 +516,55 @@ for(const id of ['player','market','season','cutoff','modelOpp'])$(id).addEventL
 $('analyze').addEventListener('click',clearContextInputs);
 for(const id of ['dLine','pLine','dOdds','pOdds'])$(id).addEventListener('input',()=>{$('modelOddsVerified').checked=false;invalidateModel();});
 
+
+
+// Fase 2.3: calendario real, sin inferir localía en sedes neutrales.
+let scheduleData=null, scheduleRequest=0, smartGame=null, smartTeam='', autoMatchContext='';
+const venueAliases=[
+ [/highmark stadium/i,'BUF','America/New_York'],[/paycor stadium/i,'CIN','America/New_York'],[/northwest stadium|fedexfield/i,'WAS','America/New_York'],[/lambeau field/i,'GB','America/Chicago'],[/arrowhead/i,'KC','America/Chicago'],[/soldier field/i,'CHI','America/Chicago'],[/lincoln financial field/i,'PHI','America/New_York'],[/acrisure stadium|heinz field/i,'PIT','America/New_York'],[/metlife stadium/i,'NY','America/New_York'],[/hard rock stadium/i,'MIA','America/New_York'],[/gillette stadium/i,'NE','America/New_York']
+];
+function localKickoff(iso,zone){
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso));
+ const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+function findNextGame(records,team,now){return records.filter(g=>!g.played&&(g.home===team||g.away===team)&&Date.parse(g.kickoff)>now).sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff))[0]||null;}
+function matchStatus(message){const el=$('smartMatchOutput');el.className='status warn';el.textContent=message;$('applySchedule').disabled=true;smartGame=null;smartTeam='';}
+function renderSmartMatch(auto=false){
+ const el=$('smartMatchOutput'),{player,season,roster}=profileMatch();
+ if(!scheduleData?.ok||!recentStamp(scheduleData.fetched_at,48)||Number(scheduleData.season)!==season){matchStatus('Calendario no disponible, desactualizado o de otra temporada. Conserva la selección manual.');return;}
+ if(!roster||!recentStamp(rosterData?.fetched_at,48)||!recentStamp(rosterData?.source_modified,24*8)){matchStatus('No hay equipo de plantilla reciente e inequívoco para este jugador. Selecciona rival manualmente.');return;}
+ const team=String(roster.team||'').toUpperCase(); const game=findNextGame(scheduleData.records,team,Date.now());
+ if(!game){matchStatus('No se encontró un próximo partido REG con hora confirmada en el calendario descargado. Puede ser descanso, fin de temporada o un horario pendiente.');return;}
+ smartGame=game;smartTeam=team;
+ const opp=game.home===team?game.away:game.home;
+ const loc=game.location==='Neutral'?'Sede neutral':game.home===team?'Local':'Visitante';
+ const time=new Date(game.kickoff).toLocaleString('es-MX',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'});
+ el.className='status';el.innerHTML=`<b>${esc(game.away)} @ ${esc(game.home)}</b><br>Semana ${esc(game.week)} · ${esc(loc)} · Rival: ${esc(opp)}<br>Inicio: ${esc(time)} (hora del Este)<br>Estadio: ${esc(game.stadium||'Por confirmar')}<br>Fuente: nflverse · descarga ${esc(injuryDate(scheduleData.fetched_at))}<br><span class="subtle">Horario sujeto a cambios. El partido pertenece al equipo; no confirma que el jugador participe.</span>`;
+ $('applySchedule').disabled=false;
+ const context=[player,season,game.id].join('|');
+ if(auto&&!$('modelOpp').value&&autoMatchContext!==context){autoMatchContext=context;applySmartMatch();}
+}
+function applySmartMatch(){
+ const g=smartGame,t=smartTeam;if(!g||!t||Date.parse(g.kickoff)<=Date.now())return;
+ const {roster,season}=profileMatch();if(String(roster?.team||'').toUpperCase()!==t||Number(scheduleData?.season)!==season)return;
+ const opp=g.home===t?g.away:g.home;
+ if(!Array.from($('modelOpp').options).some(o=>o.value===opp)){matchStatus('Abreviatura del rival no reconocida; selecciona manualmente.');return;}
+ $('cutoff').value=String(g.week);$('modelOpp').value=opp;
+ clearContextInputs();renderPlayer();compare();renderLadders();invalidateModel();renderInjury();
+ const venue=venueAliases.find(v=>v[0].test(g.stadium||''));
+ const roof=String(g.roof||'').toLowerCase();$('roof').value=roof==='dome'||roof==='closed'?'closed':roof==='outdoors'||roof==='open'?'open':'unknown';
+ $('weatherOutput').className='status warn';$('stadium').value='';$('kickoff').value='';$('otherCoords').hidden=true;
+ if(venue){$('stadium').value=venue[1];$('kickoff').value=localKickoff(g.kickoff,venue[2]);$('weatherOutput').textContent='Consultando el clima del partido seleccionado…';checkWeather();}
+ else{$('weatherOutput').textContent='Estadio del calendario: '+(g.stadium||'por confirmar')+'. Selecciona su ubicación y hora local manualmente para consultar clima; no se adivinan coordenadas.';}
+}
+async function loadSmartMatch(auto=false){
+ const id=++scheduleRequest;matchStatus('Consultando calendario…');const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),9000);
+ try{const r=await fetch('./data/schedule.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(id!==scheduleRequest)return;scheduleData=d;renderSmartMatch(auto);}catch(e){if(id===scheduleRequest){scheduleData=null;matchStatus('No se pudo cargar el calendario. Usa la selección manual.');}}finally{clearTimeout(timer);}
+}
+$('reloadSchedule').addEventListener('click',async()=>{await loadInjuries();await loadSmartMatch(false);});
+$('applySchedule').addEventListener('click',applySmartMatch);
+for(const id of ['player','season','cutoff','modelOpp'])$(id).addEventListener('change',()=>{$('stadium').value='';$('kickoff').value='';$('otherCoords').hidden=true;$('weatherOutput').className='status warn';$('weatherOutput').textContent='Contexto cambiado. Consulta nuevamente el clima.';});
+for(const id of ['player','season'])$(id).addEventListener('change',()=>{if(scheduleData)renderSmartMatch($('page-modelo').classList.contains('active'));});
 
 </script>
 </body></html>
