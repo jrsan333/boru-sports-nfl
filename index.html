@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 2.2 — Radar de lesiones</title>
+<title>BÖRU NFL · Fase 2.2.2 — Radar de lesiones</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -51,6 +51,10 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 }
 @media(max-width:380px){.comparison{grid-template-columns:minmax(0,1fr)}.forecast .kpi{min-width:0;flex-basis:28%}}
 
+
+.player-profile{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:10px;background:#102333;border:1px solid #315466;border-radius:13px;color:var(--txt)}
+.player-photo{width:88px;height:76px;flex:0 0 88px;display:grid;place-items:center;background:#1c3443;border-radius:10px;overflow:hidden;color:var(--muted);font-size:30px}
+.player-photo img{width:100%;height:100%;object-fit:contain;grid-area:1/1}.player-photo span{grid-area:1/1}.player-profile .identity{flex:1;min-width:0;overflow-wrap:anywhere}.player-profile .identity b{font-size:16px}.team-logo{width:35px;height:35px;object-fit:contain;flex-shrink:0}.source-row{padding:9px 0;border-top:1px solid #ffffff20}.source-row b{display:block}.profile-note{display:block;margin-top:7px;font-size:11px}
 </style>
 </head>
 <body>
@@ -58,7 +62,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 <header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2.2.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -75,7 +79,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </section>
 <section class="page" id="page-comparador">
  <div class="hero"><div class="eyebrow">02 / Líneas de apuesta</div><h1>Draftea vs. Playdoit</h1><p>Compara momios reales capturados. La frecuencia histórica es descriptiva. Usa la pestaña Modelo para estimaciones experimentales, todavía no validadas.</p></div>
- <div class="grid"><div class="card full"><h2 id="compMarketTitle">Mercado: Joe Burrow · passing yards</h2><p class="subtle">Cuotas registradas de las capturas del 23 nov 2026, sujetas a cambio. Ajusta la línea y los momios si cambian en la casa.</p><div class="comparison" style="margin-top:15px"><div class="cmp"><h3>🟢 Draftea</h3><label for="dLine">Línea (Over)</label><input id="dLine" type="number" step="0.5" value="308.5"><div class="field"><label for="dOdds">Momio americano</label><input id="dOdds" value="-115" inputmode="text"></div></div><div class="cmp"><h3>🟠 Playdoit</h3><label for="pLine">Línea (Over)</label><input id="pLine" type="number" step="0.5" value="299.5"><div class="field"><label for="pOdds">Momio americano</label><input id="pOdds" value="-155" inputmode="text"></div></div></div><div class="btns"><button class="btn primary" id="compare">Comparar líneas</button></div></div>
+ <div class="grid"><div class="card full"><h2 id="compMarketTitle">Mercado: Joe Burrow · passing yards</h2><p class="subtle">Captura las líneas y momios del jugador y partido seleccionados. El ejemplo histórico de Burrow se conserva únicamente en la escalera inferior.</p><div class="comparison" style="margin-top:15px"><div class="cmp"><h3>🟢 Draftea</h3><label for="dLine">Línea (Over)</label><input id="dLine" type="number" step="0.5" placeholder="Captura dato actual"><div class="field"><label for="dOdds">Momio americano</label><input id="dOdds" placeholder="Captura dato actual" inputmode="text"></div></div><div class="cmp"><h3>🟠 Playdoit</h3><label for="pLine">Línea (Over)</label><input id="pLine" type="number" step="0.5" placeholder="Captura dato actual"><div class="field"><label for="pOdds">Momio americano</label><input id="pOdds" placeholder="Captura dato actual" inputmode="text"></div></div></div><div class="btns"><button class="btn primary" id="compare">Comparar líneas</button></div></div>
  <div class="card full"><h2>Comparación descriptiva</h2><div id="comparisonOutput"></div><div class="status warn">Los porcentajes en esta pestaña son frecuencias pasadas. El modelo experimental está separado para evitar confundir historial con probabilidad futura.</div></div>
  <div class="card full"><h2>Escalera guardada de las capturas</h2><div class="tablebox" id="ladders"></div><p class="subtle">Draftea «309+» es equivalente a Over 308.5. Los precios se transcribieron de tus imágenes; no son cuotas en vivo.</p></div>
  </div>
@@ -107,13 +111,13 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
     <option value="SF">SF · San Francisco 49ers</option><option value="TB">TB · Tampa Bay Buccaneers</option>
     <option value="TEN">TEN · Tennessee Titans</option><option value="WAS">WAS · Washington Commanders</option>
    </select></div>
-      <div><label for="modelLine">Línea Over</label><input id="modelLine" type="number" step="0.5" min="0" value="308.5"></div></div>
+      <div><label for="modelLine">Línea Over</label><input id="modelLine" type="number" step="0.5" min="0" placeholder="Captura dato actual"></div></div>
 
-      <div class="field" id="injuryRadar"><h2 style="margin-bottom:5px">Radar de lesiones · ESPN</h2>
-      <p class="subtle">Reporte reciente del jugador seleccionado. Fuente secundaria; no confirma participación ni corresponde necesariamente a la semana de corte.</p>
+      <div class="field" id="injuryRadar"><h2 style="margin-bottom:5px">Injury Radar Plus · Lesiones y plantilla</h2>
+      <p class="subtle">Ficha del jugador, reporte reciente de ESPN y última plantilla semanal de nflverse. No confirman participación para un partido ni sustituyen la lista oficial de inactivos.</p>
       <div id="injuryOutput" class="status warn" aria-live="polite">Consultando reporte publicado…</div>
       <div class="btns"><button type="button" class="btn secondary" id="reloadInjuries">Actualizar consulta</button></div>
-      <p class="subtle"><a href="https://www.espn.com/nfl/injuries" target="_blank" rel="noopener">Reporte ESPN</a> · <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">Reporte oficial NFL</a>. Verifica lista oficial de inactivos antes de confirmar disponibilidad.</p></div>
+      <p class="subtle"><a href="https://www.espn.com/nfl/injuries" target="_blank" rel="noopener">Reporte ESPN</a> · <a href="https://nflreadr.nflverse.com/articles/dictionary_roster_status.html" target="_blank" rel="noopener">Códigos de plantilla</a> · <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">Reporte oficial NFL</a>. Verifica lista oficial de inactivos antes de confirmar disponibilidad.</p></div>
       <div class="field"><label for="modelAvailability">Disponibilidad del jugador (verificada manualmente)</label><select id="modelAvailability">
         <option value="unknown">Sin verificar — no asumir que jugará</option><option value="active">Confirmado activo / disponible</option><option value="limited">Entrenamiento limitado / Questionable</option><option value="doubtful">Doubtful / situación incierta</option><option value="out">Out / descartado</option>
       </select></div>
@@ -193,9 +197,9 @@ $('gameTable').innerHTML=`<table class="tbl"><thead><tr><th>Semana</th><th>Rival
 $('playerInfo').textContent=dataset.seed_mode?'MUESTRA INICIAL: historial de Burrow guardado en la prueba previa; no está conectado en vivo.':'Datos de '+dataset.source+'. Son resultados anteriores al corte seleccionado, no una predicción del próximo partido.';$('playerInfo').className='status '+(dataset.seed_mode?'warn':'');}
 function rateFor(line){const p=$('player').value.trim(),market=$('market').value,season=Number($('season').value),cutoff=Number($('cutoff').value)||99;const rows=rowsFor(p,market,season,cutoff);let hit=rows.filter(r=>Number(r[market])>line).length,eq=rows.filter(r=>Number(r[market])===line).length;return {n:rows.length,hit,eq,p:rows.length?hit/rows.length:0};}
 function compare(){$('compMarketTitle').textContent='Mercado: '+($('player').value.trim()||'Jugador')+' · '+(MARKET[$('market').value]||$('market').value);const sides=[['Draftea','dLine','dOdds'],['Playdoit','pLine','pOdds']];const result=[];for(const [book,lineId,oddsId] of sides){const raw=$(lineId).value;const line=Number(raw),dec=oddsToDecimal($(oddsId).value);if(!raw.trim()||!Number.isFinite(line)||line<0||dec==null){$('comparisonOutput').innerHTML='<div class="status error">Revisa las líneas y momios. Usa cuotas americanas como -115 o +125, o decimales como 1.90.</div>';return;}const r=rateFor(line),threshold=1/dec;result.push({book,line,rawOdds:$(oddsId).value,threshold,...r});}
-$('comparisonOutput').innerHTML=`${($('player').value.trim().toLowerCase()!=='joe burrow'||$('market').value!=='passing_yards')?'<div class="status warn">ATENCIÓN: las cuotas precargadas son de Burrow. Introduce los momios y líneas REALES del jugador seleccionado antes de interpretarlos.</div>':''}<div class="comparison">${result.map((x,i)=>`<div class="cmp"><h3>${esc(x.book)}</h3><small>Over ${esc(x.line)} · Momio ${esc(x.rawOdds)}</small><div class="metric"><small>Historial sobre línea</small><br><strong>${x.n?(x.p*100).toFixed(1)+'%':'—'}</strong></div><div class="mutebar"><div class="fill${i?' amber':''}" style="width:${x.n?x.p*100:0}%"></div></div><small>${x.hit}/${x.n} partidos · Equilibrio del momio ${(x.threshold*100).toFixed(1)}%</small></div>`).join('')}</div><div class="callout">${result[0].line===result[1].line?'Ambas casas ofrecen la misma línea. La diferencia de momios se puede comparar directamente.':'Las casas ofrecen umbrales diferentes. NO compares los porcentajes o los momios como si fueran el mismo evento.'}<br>Estos porcentajes son <b>frecuencias pasadas</b>, no probabilidades predictivas.</div>`;
+$('comparisonOutput').innerHTML=`${($('player').value.trim().toLowerCase()!=='joe burrow'||$('market').value!=='passing_yards')?'<div class="status warn">Confirma que los datos capturados corresponden al jugador, mercado y partido seleccionados.</div>':''}<div class="comparison">${result.map((x,i)=>`<div class="cmp"><h3>${esc(x.book)}</h3><small>Over ${esc(x.line)} · Momio ${esc(x.rawOdds)}</small><div class="metric"><small>Historial sobre línea</small><br><strong>${x.n?(x.p*100).toFixed(1)+'%':'—'}</strong></div><div class="mutebar"><div class="fill${i?' amber':''}" style="width:${x.n?x.p*100:0}%"></div></div><small>${x.hit}/${x.n} partidos · Equilibrio del momio ${(x.threshold*100).toFixed(1)}%</small></div>`).join('')}</div><div class="callout">${result[0].line===result[1].line?'Ambas casas ofrecen la misma línea. La diferencia de momios se puede comparar directamente.':'Las casas ofrecen umbrales diferentes. NO compares los porcentajes o los momios como si fueran el mismo evento.'}<br>Estos porcentajes son <b>frecuencias pasadas</b>, no probabilidades predictivas.</div>`;
 }
-function renderLadders(){if($('player').value.trim().toLowerCase()!=='joe burrow'||$('market').value!=='passing_yards'||Number($('season').value)!==2026||Number($('cutoff').value)!==12){$('ladders').innerHTML='<p class="muted">La escalera capturada corresponde únicamente a Joe Burrow, pase, 23 nov 2026 (semana 12). Ajusta esos filtros para verla. Las cuotas predeterminadas no aplican a otros jugadores.</p>';return;}const data=LADDERS.map(([book,label,line,odds])=>{const d=oddsToDecimal(String(odds>0?'+'+odds:odds));const rate=rateFor(line);return `<tr><td>${esc(book)}</td><td>${esc(label)}</td><td>${odds>0?'+':''}${odds}</td><td>${(100/d).toFixed(1)}%</td><td>${rate.hit}/${rate.n}</td></tr>`;}).join('');$('ladders').innerHTML=`<table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Historial*</th></tr></thead><tbody>${data}</tbody></table><p class="subtle">*Calculado con el jugador/mercado/temporada y semana de corte elegidos arriba.</p>`;}
+function renderLadders(){if($('player').value.trim().toLowerCase()!=='joe burrow'||$('market').value!=='passing_yards'||Number($('season').value)!==2026||Number($('cutoff').value)!==12){$('ladders').innerHTML='<p class="muted">La escalera capturada corresponde únicamente a Joe Burrow, pase, 23 nov 2026 (semana 12). Ajusta esos filtros para verla. Los datos históricos no aplican a otros jugadores.</p>';return;}const data=LADDERS.map(([book,label,line,odds])=>{const d=oddsToDecimal(String(odds>0?'+'+odds:odds));const rate=rateFor(line);return `<tr><td>${esc(book)}</td><td>${esc(label)}</td><td>${odds>0?'+':''}${odds}</td><td>${(100/d).toFixed(1)}%</td><td>${rate.hit}/${rate.n}</td></tr>`;}).join('');$('ladders').innerHTML=`<table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Historial*</th></tr></thead><tbody>${data}</tbody></table><p class="subtle">*Calculado con el jugador/mercado/temporada y semana de corte elegidos arriba.</p>`;}
 function parseCSV(raw){if(raw.charCodeAt(0)===65279)raw=raw.slice(1);let rows=[],row=[],field='',quoted=false;for(let i=0;i<raw.length;i++){let c=raw[i];if(c==='"'){if(quoted&&raw[i+1]==='"'){field+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(field);field='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&raw[i+1]==='\n')i++;row.push(field);if(row.some(x=>x!==''))rows.push(row);row=[];field='';}else field+=c;}row.push(field);if(row.some(x=>x!==''))rows.push(row);if(!rows.length)throw Error('CSV vacío');const header=rows.shift().map(x=>x.toLowerCase().trim());return rows.map(cells=>Object.fromEntries(header.map((k,i)=>[k,cells[i]??''])));}
 function normalizeCsv(csv){const data=[];const valid=['player_display_name','player_name','player'];if(!csv.length||!valid.some(f=>f in csv[0])||!('week' in csv[0])||!('season' in csv[0]))throw Error('Faltan player_display_name/player_name, season o week.');for(const r of csv){const season=Number(r.season),week=Number(r.week);if(!Number.isFinite(season)||!Number.isFinite(week)||week<=0||r.season_type&&r.season_type!=='REG')continue;const item={player:String(r.player_display_name||r.player_name||r.player||'').trim(),player_id:r.player_id||r.player_gsis_id||'',position:r.position||'',season,week,team:r.team||r.recent_team||'',opponent:r.opponent_team||''};for(const m of Object.keys(MARKET)){const column=m==='carries'?(r.carries??r.rushing_attempts):r[m];item[m]=column==null||column===''?null:Number(column);}if(!item.player||!Object.keys(MARKET).some(m=>Number.isFinite(item[m])))continue;data.push(item);}if(!data.length)throw Error('No hay partidos regulares con estadísticas válidas.');return {source:'CSV importado manualmente',updated_at:new Date().toISOString(),seed_mode:false,records:data};}
 $('analyze').addEventListener('click',()=>{renderPlayer();compare();renderLadders();});$('compare').addEventListener('click',compare);$('reloadData').addEventListener('click',loadData);$('csvFile').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{if(f.size>50_000_000)throw Error('El archivo excede los 50 MB');const raw=await f.text();dataset=normalizeCsv(parseCSV(raw));header();renderAll();$('csvStatus').textContent=`Importados ${dataset.records.length} registros desde ${f.name}.`;$('csvStatus').className='status';}catch(err){$('csvStatus').textContent='Error al importar: '+err.message;$('csvStatus').className='status error';}});
@@ -354,6 +358,7 @@ function runModel(){
  if(!player||!Number.isInteger(season)||!Number.isInteger(cutoff)||cutoff<2||cutoff>23||!$('modelLine').value.trim()||!Number.isFinite(line)||line<0){out.innerHTML='<div class="status warn">Revisa jugador, temporada, corte y línea.</div>';back.innerHTML='';return;}
  renderOpponentDefense();
  if(!opp){out.innerHTML='<div class="status warn">Elige primero la defensiva rival. Es obligatorio para evaluar la proyección y mostrar sus yardas permitidas por aire y tierra.</div>';back.innerHTML='';return;}
+ if(availabilityBlock()){out.innerHTML='<div class="status error">Las fuentes recientes indican baja o participación incierta. Se suspende el pronóstico hasta aclarar la disponibilidad.</div>';back.innerHTML='';return;}
  if(avail==='out'){out.innerHTML='<div class="status error">Jugador marcado como OUT. No se calcula pronóstico. Verifica el reporte oficial y las reglas de anulación de cada casa.</div>';back.innerHTML='';return;}
  if(avail==='doubtful'){out.innerHTML='<div class="status warn">Participación muy incierta: se suspende la proyección hasta confirmar disponibilidad. No supongas que jugará.</div>';back.innerHTML='';return;}
  const pred=predictBaseline(player,market,season,cutoff,opp);
@@ -366,7 +371,7 @@ function runModel(){
  else if(!pred.defense?.enough)alerts.push(`Muestra insuficiente de defensa ${esc(opp)}: se usa ajuste 0%.`);
  if($('teamNotes').value.trim())alerts.push('Hay novedades manuales del equipo que todavía NO se cuantifican ni verifican automáticamente.');
  const sourceWarning=!$('modelOddsVerified').checked;
- const bookmaker=sourceWarning?'<div class="status warn">Para comparar probabilidades con las casas, captura las cuotas ACTUALES de este jugador en Comparador y confirma arriba que las verificaste. Las cuotas precargadas son del caso histórico Burrow.</div>':`<div class="tablebox"><table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Over*</th><th>Diferencia*</th></tr></thead><tbody>${modelOddsRow('Draftea','dLine','dOdds',pred)}${modelOddsRow('Playdoit','pLine','pOdds',pred)}</tbody></table></div>`;
+ const bookmaker=sourceWarning?'<div class="status warn">Para comparar probabilidades con las casas, captura las cuotas ACTUALES de este jugador en Comparador y confirma arriba que las verificaste. Los campos se vacían al cambiar de jugador, mercado o partido.</div>':`<div class="tablebox"><table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Over*</th><th>Diferencia*</th></tr></thead><tbody>${modelOddsRow('Draftea','dLine','dOdds',pred)}${modelOddsRow('Playdoit','pLine','pOdds',pred)}</tbody></table></div>`;
  out.innerHTML=`<p class="subtle">${esc(player)} · ${esc(MARKET[market])} · ${season} · semana ${cutoff}</p>
  <div class="forecast"><div class="kpi"><span>Estimación central*</span><strong>${num(pred.mu)}</strong><em>unidades del mercado</em></div><div class="kpi"><span>Prob. Over*</span><strong>${fmtP(p)}</strong><em>línea ${num(line)}</em></div><div class="kpi"><span>Prob. Under*</span><strong>${fmtP(1-p)}</strong><em>sin margen de casa</em></div></div>
  <div class="meterline"><span style="width:${p*100}%"></span><span style="width:${(1-p)*100}%"></span></div>
@@ -425,29 +430,56 @@ document.querySelector('[data-tab="modelo"]').addEventListener('click',()=>{mode
 let injuryData=null, injuryRequest=0;
 const injuryName=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const injuryDate=v=>{const d=new Date(v);return v&&Number.isFinite(d.getTime())?d.toLocaleString('es-MX'):'Sin fecha informada';};
-function injuryTone(status){const s=String(status||'').toLowerCase();if(/^(out|inactive|injured reserve|ir|pup|suspended)$/.test(s))return 'error';return 'warn';}
+const injuryKey=v=>String(v||'').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+const injuryLabels={'active':'Activo','out':'Descartado','inactive':'Inactivo','questionable':'Participación incierta','doubtful':'Participación poco probable','injured reserve':'Reserva de lesionados','ir':'Reserva de lesionados','pup':'Lista PUP','suspended':'Suspendido','probable':'Probable','day to day':'Día a día','healthy':'Sin lesión reportada','available':'Disponible'};
+function injuryTone(status,stale=false){const k=injuryKey(status);if(stale)return 'warn';if(/^(out|inactive|injured reserve|ir|pup|suspended)$/.test(k))return 'error';if(k==='active'||k==='available'||k==='healthy')return '';return 'warn';}
+function injuryDetail(r){const v=String(r.injury||'').trim(),k=injuryKey(v);return !v||k===injuryKey(r.status)||Object.prototype.hasOwnProperty.call(injuryLabels,k)?'Sin lesión específica informada':v;}
+let rosterData=null;
+const rosterLabels={ACT:'Plantilla activa',RES:'Lista de reserva (tipo no especificado)',IR:'Reserva de lesionados',INA:'Fuera de plantilla activa / inactivo',PUP:'Lista PUP',RSN:'Reserva por lesión no relacionada con fútbol',SUS:'Suspendido',DEV:'Equipo de prácticas',EXE:'Lista de exención',RET:'Retirado',CUT:'Baja de plantilla',UFA:'Agente libre'};
+const reservedCodes=new Set(['RES','IR','INA','PUP','RSN','SUS','DEV','EXE','RET','CUT','UFA']);
+function recentStamp(v,limit=30){const h=(Date.now()-Date.parse(v))/3600000;return Number.isFinite(h)&&h>=-1&&h<=limit;}
+function uniqueRecord(arr){const m=new Map();for(const r of arr){const k=JSON.stringify(r);m.set(k,r);}return m.size===1?[...m.values()][0]:null;}
+function profileMatch(){
+ const player=$('player').value.trim(),season=Number($('season').value);
+ const prev=dataset.records.filter(r=>injuryName(r.player)===injuryName(player)&&Number(r.season)===season);
+ const ids=[...new Set(prev.map(r=>String(r.player_id||'')).filter(Boolean))];
+ let roster=null,report=null;
+ if(rosterData?.ok&&Number(rosterData.season)===season){
+  const pool=rosterData.records.filter(r=>ids.length===1?String(r.gsis_id)===ids[0]:injuryName(r.name)===injuryName(player));
+  if(ids.length<=1)roster=uniqueRecord(pool);
+ }
+ if(injuryData?.ok&&(!injuryData.season||Number(injuryData.season)===season)){
+  const pool=injuryData.records.filter(r=>roster?.espn_id&&/^\d+$/.test(roster.espn_id)?String(r.id)===roster.espn_id:injuryName(r.name)===injuryName(player));
+  if(ids.length<=1){const names=new Set(pool.map(r=>String(r.id||r.name)));if(names.size===1){const sorted=pool.slice().sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0));const newest=sorted.filter(r=>r.date===sorted[0].date);report=uniqueRecord(newest);}}
+ }
+ return {player,season,roster,report};
+}
+function rosterCode(r){return String(r?.status||'').trim().toUpperCase();}
+function currentRoster(r){return !!r&&recentStamp(rosterData?.fetched_at)&&recentStamp(rosterData?.source_modified,24*8)&&Number(rosterData.week)>=Number($('cutoff').value)-1;}
+function currentReport(r){return !!r&&recentStamp(injuryData?.fetched_at)&&recentStamp(r.date,72);}
+function availabilityBlock(){const {roster:r,report:p}=profileMatch();return (currentRoster(r)&&reservedCodes.has(rosterCode(r)))||(currentReport(p)&&/^(out|inactive|ir|injured reserve|pup|suspended|doubtful)$/.test(injuryKey(p.status)));}
+function photoUrl(r,p){const id=String(r?.espn_id||p?.id||'');if(/^\d+$/.test(id))return 'https://a.espncdn.com/i/headshots/nfl/players/full/'+id+'.png';try{const u=new URL(r?.headshot||'');if(u.protocol==='https:'&&['static.www.nfl.com','www.nfl.com','a.espncdn.com','a2.espncdn.com','a3.espncdn.com','a4.espncdn.com','images.nfl.com','static.nfl.com'].includes(u.hostname))return u.href;}catch(e){}return '';}
+function logoUrl(team){const t=String(team||'').toUpperCase(),aliases={LA:'LAR',JAC:'JAX',WSH:'WAS'};const v=aliases[t]||t;return /^[A-Z]{2,3}$/.test(v)?'https://a.espncdn.com/i/teamlogos/nfl/500/'+v.toLowerCase()+'.png':'';}
 function renderInjury(){
- const el=$('injuryOutput'); if(!el)return;
- el.className='status warn';
- if(!injuryData){el.textContent='Reporte sin cargar. Consulta nuevamente o revisa el reporte oficial.';return;}
- const stamp=injuryDate(injuryData.fetched_at), age=(Date.now()-Date.parse(injuryData.fetched_at))/3600000;
- if(!injuryData.ok){el.textContent='Fuente secundaria no disponible. Último intento: '+stamp+'. Verifica el reporte oficial.';return;}
- if(!Number.isFinite(age)||age>30||age< -1){el.textContent='Reporte sin fecha válida o desactualizado (más de 30 h). Consulta el reporte oficial. Última descarga: '+stamp;return;}
- const player=$('player').value.trim(), season=Number($('season').value);
- if(!player){el.textContent='Selecciona un jugador.';return;}
- if(injuryData.season&&Number(injuryData.season)!==season){el.textContent='El reporte de ESPN es de otra temporada; no se utiliza para el corte seleccionado.';return;}
- const matches=injuryData.records.filter(r=>injuryName(r.name)===injuryName(player));
- if(!matches.length){el.textContent=player+': sin coincidencia en el reporte consultado. NO significa que esté sano o activo. Descarga: '+stamp;return;}
- if(matches.length!==1){el.textContent='Hay varias coincidencias para '+player+'. Confirma identidad y equipo en el reporte oficial.';return;}
- const r=matches[0];el.className='status '+injuryTone(r.status);
- el.innerHTML='<b>'+esc(r.name)+' · '+esc(r.team||r.team_name||'Equipo sin informar')+'</b><br>Estado ESPN: <b>'+esc(r.status)+'</b><br>Lesión: '+esc(r.injury||'Sin detalle informado')+'<br>Fecha del reporte: '+esc(injuryDate(r.date))+'<br>Descarga: '+esc(stamp)+'<br><span class="subtle">Reporte reciente, no histórico. No modifica la estimación ni confirma disponibilidad. Contrasta con la NFL.</span>';
+ const el=$('injuryOutput');if(!el)return;const {player,roster:r,report:p}=profileMatch();
+ if(!player){el.className='status warn';el.textContent='Selecciona un jugador.';return;}
+ const rc=rosterCode(r),rFresh=currentRoster(r),pFresh=currentReport(p),blocked=availabilityBlock();
+ const active=(rFresh&&rc==='ACT'||pFresh&&['active','available','healthy'].includes(injuryKey(p?.status)))&&!blocked&&(!r||!reservedCodes.has(rc));
+ el.className='status '+(blocked?'error':active?'':'warn');
+ const team=r?.team||p?.team||'',pos=r?.position||p?.position||'',photo=photoUrl(r,p),logo=logoUrl(team);
+ let html='<div class="player-profile"><div class="player-photo"><span aria-hidden="true">👤</span>'+(photo?'<img alt="" src="'+esc(photo)+'">':'')+'</div><div class="identity"><b>'+esc(r?.name||p?.name||player)+'</b><div class="subtle">'+esc([pos,team||p?.team_name].filter(Boolean).join(' · ')||'Equipo/posición sin verificar')+'</div></div>'+(logo?'<img class="team-logo" alt="" src="'+esc(logo)+'">':'')+'</div>';
+ html+='<div class="source-row"><b>Plantilla · nflverse</b>'+(r?esc(rosterLabels[rc]||rc||'Sin estado')+(r.status_description?' · '+esc(r.status_description):'')+'<br>Semana de plantilla: '+esc(rosterData.week)+' · '+esc(rosterData.season)+'<br>Fecha de archivo: '+esc(injuryDate(rosterData.source_modified))+'<br>Descarga: '+esc(injuryDate(rosterData.fetched_at))+(rFresh?'':'<br>Antigüedad o semana no confirmada; revisar fuente oficial.'):'Sin coincidencia o fuente no disponible. No confirma disponibilidad.')+'</div>';
+ html+='<div class="source-row"><b>Lesiones · ESPN</b>'+(p?esc(injuryLabels[injuryKey(p.status)]||'Estado no clasificado')+' ('+esc(p.status)+')<br>Lesión: '+esc(injuryDetail(p))+'<br>Fecha del reporte: '+esc(injuryDate(p.date))+'<br>Descarga: '+esc(injuryDate(injuryData.fetched_at))+(pFresh?'':'<br>Reporte antiguo o fecha no confirmada.'):'Sin coincidencia o fuente no disponible. No significa que esté sano.')+'</div>';
+ if(blocked)html+='<b>Alerta: estado de baja o participación incierta reportado. Se suspende la estimación experimental hasta actualizar las fuentes.</b>';
+ else if(r&&reservedCodes.has(rc))html+='<b>Antecedente de reserva/inactividad: verifica si ha sido activado.</b>';
+ html+='<span class="profile-note">Las fuentes muestran fechas y estados diferentes. Una plantilla activa no equivale a estar confirmado para el partido. No se infieren diagnósticos ni fechas de regreso. Fotografías y logotipos: ESPN / NFL, cuando estén disponibles.</span>';
+ el.innerHTML=html;for(const img of el.querySelectorAll('img')){const fallback=img.parentElement.querySelector('span');const show=()=>{if(fallback)fallback.hidden=true;};const fail=()=>{if(fallback)fallback.hidden=false;img.remove();};img.addEventListener('load',show,{once:true});img.addEventListener('error',fail,{once:true});if(img.complete){if(img.naturalWidth)show();else fail();}}
 }
 async function loadInjuries(){
- const id=++injuryRequest, el=$('injuryOutput'); el.className='status warn';el.textContent='Consultando último reporte publicado…';
- const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),9000);
- try{const res=await fetch('./data/injuries.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!res.ok)throw Error('HTTP '+res.status);const j=await res.json();if(!Array.isArray(j.records))throw Error('Formato inválido');if(id!==injuryRequest)return;injuryData=j;}
- catch(e){if(id!==injuryRequest)return;injuryData=null;}
- finally{clearTimeout(timer);if(id===injuryRequest)renderInjury();}
+ const id=++injuryRequest,el=$('injuryOutput');el.className='status warn';el.textContent='Consultando reportes publicados…';
+ const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),12000);
+ async function get(path){try{const res=await fetch(path+'?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!res.ok)throw Error('HTTP '+res.status);const j=await res.json();if(!Array.isArray(j.records))throw Error('Formato inválido');return j;}catch(e){return null;}}
+ try{const [i,r]=await Promise.all([get('./data/injuries.json'),get('./data/rosters.json')]);if(id!==injuryRequest)return;injuryData=i;rosterData=r;renderInjury();if(availabilityBlock())invalidateModel();}finally{clearTimeout(timer);}
 }
 $('reloadInjuries').addEventListener('click',loadInjuries);
 for(const id of ['player','season','cutoff'])$(id).addEventListener('change',()=>{$('modelAvailability').value='unknown';$('teamNotes').value='';renderInjury();});
@@ -455,6 +487,33 @@ $('modelOpp').addEventListener('change',()=>{$('modelAvailability').value='unkno
 $('modelAvailability').addEventListener('change',invalidateModel);
 $('analyze').addEventListener('click',()=>{invalidateModel();renderInjury();});
 document.querySelector('[data-tab="modelo"]').addEventListener('click',loadInjuries);
+
+// Fase 2.2.2: no reutilizar entradas de otro contexto.
+let priorPlayer=$('player').value.trim().toLowerCase();
+let priorContext=[$('player').value.trim().toLowerCase(),$('market').value,$('season').value,$('cutoff').value,$('modelOpp').value].join('|');
+function clearContextInputs(){
+ const player=$('player').value.trim().toLowerCase();
+ if(player!==priorPlayer){
+  const rows=dataset.records.filter(r=>String(r.player||'').trim().toLowerCase()===player&&Number(r.season)===Number($('season').value));
+  const pos=String(rows.slice().sort((a,b)=>Number(b.week)-Number(a.week))[0]?.position||'').toUpperCase();
+  const defaultMarket={QB:'passing_yards',RB:'rushing_yards',FB:'rushing_yards',WR:'receiving_yards',TE:'receiving_yards'}[pos];
+  if(defaultMarket)$('market').value=defaultMarket;
+  $('modelOpp').value='';
+  priorPlayer=player;
+ }
+ const context=[player,$('market').value,$('season').value,$('cutoff').value,$('modelOpp').value].join('|');
+ if(context===priorContext)return;
+ priorContext=context;
+ for(const id of ['modelLine','dLine','pLine','dOdds','pOdds'])$(id).value='';
+ $('modelOddsVerified').checked=false;
+ $('modelAvailability').value='unknown';
+ $('teamNotes').value='';
+ renderPlayer();compare();renderLadders();invalidateModel();renderInjury();
+}
+for(const id of ['player','market','season','cutoff','modelOpp'])$(id).addEventListener('change',clearContextInputs);
+$('analyze').addEventListener('click',clearContextInputs);
+for(const id of ['dLine','pLine','dOdds','pOdds'])$(id).addEventListener('input',()=>{$('modelOddsVerified').checked=false;invalidateModel();});
+
 
 </script>
 </body></html>
