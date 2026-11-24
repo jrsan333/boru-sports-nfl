@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 3.3.2 — News &amp; Injury Intelligence</title>
+<title>BÖRU NFL · Fase 3.4 — Matchup Intelligence</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -67,10 +67,10 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.3.2</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.4</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.3.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.4</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -143,6 +143,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
       <div class="field"><h2>Desglose por posición</h2><label for="defensePosition">Posición del ataque contrario</label><select id="defensePosition"><option value="AUTO">Automática según jugador</option><option value="QB">QB · Quarterbacks</option><option value="RB">RB / FB · Corredores</option><option value="WR">WR · Receptores</option><option value="TE">TE · Alas cerradas</option></select><div id="positionDefenseOutput" aria-live="polite" class="status warn">Selecciona rival y jugador.</div></div>
       <div class="status warn">Método: suma de estadísticas individuales del ataque contrario por partido (nflverse). Las yardas aéreas son yardas de pase <b>brutas</b>: no descuentan sacks como las yardas netas de defensa oficiales. Las terrestres pueden omitir acarreos excepcionales de otras posiciones. Son datos descriptivos, no una recomendación de apuesta.</div>
     </div>
+    <div class="card full" id="matchupCard"><h2>Matchup Intelligence · Fase 3.4</h2><p class="subtle">Historial del jugador, tendencia, localía comprobada, enfrentamientos con el rival y volumen de juego. Usa los filtros de Jugadores y el rival de Modelo.</p><div class="btns"><button type="button" class="btn secondary" id="refreshMatchup">Actualizar análisis histórico</button></div><div class="status warn" id="matchupOutput" aria-live="polite">Cargando datos históricos…</div></div>
     <div class="card"><h2>3. Resultado exploratorio</h2>
       <div class="status warn">No es recomendación de apuesta. Si faltan datos o el jugador está descartado, el sistema bloquea la proyección.</div>
       <div id="modelOutput" class="model-output"><p class="muted">Selecciona un jugador, rival y línea, luego pulsa Analizar.</p></div>
@@ -206,7 +207,7 @@ function fillPlayers(){const names=[...new Set(dataset.records.map(r=>r.player).
 function header(){const d=dataset;const seasons=[...new Set(d.records.map(r=>r.season))].sort((a,b)=>b-a);$('season').innerHTML=seasons.map(y=>`<option value="${y}">${y}</option>`).join('');$('season').value=seasons.includes(2026)?'2026':String(seasons[0]||2026);$('sourceBadge').textContent=d.seed_mode?'Muestra · Sin sincronizar':'NFL · Datos cargados';$('sourceBadge').style.borderColor=d.seed_mode?'#8a633d':'#3d675d';$('sourceBadge').style.color=d.seed_mode?'#ffd392':'#69ead1';const s=d.updated_at?new Date(d.updated_at).toLocaleString('es-MX'):'sin fecha de actualización';$('dataInfo').textContent=`Fuente: ${d.source||'nflverse'}. ${d.records.length.toLocaleString('es-MX')} registros. Actualizado: ${s}.`;if(d.seed_mode)paintStatus('Modo muestra inicial: se usa el historial previo de Burrow. No se ha conectado todavía la actualización automática; publica la app y ejecuta el proceso de actualización.','warn');else paintStatus('Archivo de estadísticas importado correctamente. Confirma fecha, semana y que el jugador haya participado.');fillPlayers();}
 async function loadData(){if(location.protocol==='file:'){dataset=SEED;header();renderAll();return;}try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);let res;try{res=await fetch('./data/player_stats.json?ts='+Date.now(),{cache:'no-store',signal:controller.signal});}finally{clearTimeout(timeout)}if(!res.ok)throw Error('HTTP '+res.status);const json=await res.json();if(!Array.isArray(json.records)||!json.records.length)throw Error('No hay registros');dataset=json;}catch(e){dataset=SEED;paintStatus('No se logró descargar el archivo NFL; continúa con la muestra o importa CSV. Detalle: '+e.message,'warn');}header();renderAll();}
 function renderAll(){renderPlayer();compare();renderLadders();const h=rowsFor('Joe Burrow','passing_yards',2026,12),s=stats(h,'passing_yards');if(s)$('homeKpis').innerHTML=`<div class="kpi"><span>Partidos</span><strong>${s.n}</strong></div><div class="kpi"><span>Promedio</span><strong>${num(s.mean)}</strong></div><div class="kpi"><span>Últimos 5</span><strong>${num(s.last5)}</strong></div>`;else $('homeKpis').innerHTML='<p class="muted">Sin datos previos para el caso guardado.</p>';}
-function renderPlayer(){const player=$('player').value.trim(),market=$('market').value,season=Number($('season').value),cutoff=Number($('cutoff').value)||99;current=rowsFor(player,market,season,cutoff);const s=stats(current,market);$('playerSummary').textContent=`${player||'Sin jugador'} · ${MARKET[market]} · ${season} · anterior a semana ${cutoff}`;if(!s){$('playerKpis').innerHTML='<div class="status warn" style="grid-column:1/-1">No hay registros con valores para ese jugador/mercado y corte. Comprueba el nombre, el periodo o importa datos NFL.</div>';$('histogram').innerHTML='';$('gameTable').innerHTML='<p class="muted">No se encontraron partidos.</p>';$('playerInfo').textContent='No confundir ausencia de estadísticas con haber conseguido cero yardas.';return;}
+function renderPlayer(){setTimeout(()=>{if(typeof renderMatchup==='function')renderMatchup();},0);const player=$('player').value.trim(),market=$('market').value,season=Number($('season').value),cutoff=Number($('cutoff').value)||99;current=rowsFor(player,market,season,cutoff);const s=stats(current,market);$('playerSummary').textContent=`${player||'Sin jugador'} · ${MARKET[market]} · ${season} · anterior a semana ${cutoff}`;if(!s){$('playerKpis').innerHTML='<div class="status warn" style="grid-column:1/-1">No hay registros con valores para ese jugador/mercado y corte. Comprueba el nombre, el periodo o importa datos NFL.</div>';$('histogram').innerHTML='';$('gameTable').innerHTML='<p class="muted">No se encontraron partidos.</p>';$('playerInfo').textContent='No confundir ausencia de estadísticas con haber conseguido cero yardas.';return;}
 $('playerKpis').innerHTML=`<div class="kpi"><span>Partidos</span><strong>${s.n}</strong></div><div class="kpi"><span>Promedio</span><strong>${num(s.mean)}</strong></div><div class="kpi"><span>Últimos 5</span><strong>${num(s.last5)}</strong></div>`;const view=current.slice(-12);const max=Math.max(1,...view.map(r=>Number(r[market])));$('histogram').innerHTML=`<div class="bars" role="img" aria-label="Yardas de los últimos partidos">${view.map(r=>{const v=Number(r[market]),h=Math.max(1,Math.round(v/max*93));return `<div class="barcol" style="--barh:${h}%"><span class="bar-value">${esc(v)}</span><div class="bar" style="height:${h}%"></div><span class="bar-label">${r.week!=null?'S'+esc(r.week):esc(r.label||'J')}</span></div>`}).join('')}</div><div class="legend">Hasta 12 juegos; valores por partido, no proyección.</div>`;
 $('gameTable').innerHTML=`<table class="tbl"><thead><tr><th>Semana</th><th>Rival</th><th>Equipo</th><th>${esc(MARKET[market])}</th></tr></thead><tbody>${[...current].reverse().map(r=>`<tr><td>${r.week!=null?'S'+esc(r.week):esc(r.label||'—')}</td><td>${esc(r.opponent||'—')}</td><td>${esc(r.team||'—')}</td><td><b>${num(r[market])}</b></td></tr>`).join('')}</tbody></table>`;
 $('playerInfo').textContent=dataset.seed_mode?'MUESTRA INICIAL: historial de Burrow guardado en la prueba previa; no está conectado en vivo.':'Datos de '+dataset.source+'. Son resultados anteriores al corte seleccionado, no una predicción del próximo partido.';$('playerInfo').className='status '+(dataset.seed_mode?'warn':'');}
@@ -655,7 +656,7 @@ function applySmartMatch(){
 }
 async function loadSmartMatch(auto=false){
  const id=++scheduleRequest;matchStatus('Consultando calendario…');const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),9000);
- try{const r=await fetch('./data/schedule.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(id!==scheduleRequest)return;scheduleData=d;renderSmartMatch(auto);}catch(e){if(id===scheduleRequest){scheduleData=null;matchStatus('No se pudo cargar el calendario. Usa la selección manual.');}}finally{clearTimeout(timer);}
+ try{const r=await fetch('./data/schedule.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(id!==scheduleRequest)return;scheduleData=d;renderSmartMatch(auto);}catch(e){if(id===scheduleRequest){scheduleData=null;matchStatus('No se pudo cargar el calendario. Usa la selección manual.');}}finally{clearTimeout(timer);renderMatchup();}
 }
 $('reloadSchedule').addEventListener('click',async()=>{await loadInjuries();await loadSmartMatch(false);});
 $('applySchedule').addEventListener('click',applySmartMatch);
@@ -868,6 +869,53 @@ for(const id of ['weatherAuditCut','weatherAuditPeriod','weatherAuditGroup','csv
 function copyAudit(output){const t=$(output).innerText;const box=$('auditText');box.value=t;box.hidden=false;box.focus();box.select();if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>{$('copyStatus').textContent='Texto copiado.';}).catch(()=>{$('copyStatus').textContent='Selecciona y copia el texto manualmente.';});else $('copyStatus').textContent='Selecciona y copia el texto manualmente.';}
 $('copyMass').addEventListener('click',()=>{const el=$('massOutput');const opened=[...el.querySelectorAll('details:not([open])')];opened.forEach(x=>x.open=true);copyAudit('massOutput');opened.forEach(x=>x.open=false);});
 $('copyWeather').addEventListener('click',()=>copyAudit('weatherAuditOutput'));
+
+// Fase 3.4: descripción histórica independiente del modelo.
+function matchupNumber(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;}
+function matchupTeam(v){return weatherTeam(v);}
+function matchupRows(records,player,year,cut,market){
+ const name=String(player).trim().toLowerCase();
+ const rows=records.filter(r=>String(r.player||'').trim().toLowerCase()===name&&Number.isInteger(Number(r.season))&&Number(r.season)>0&&Number.isInteger(Number(r.week))&&Number(r.week)>=1&&Number(r.week)<=18&&(Number(r.season)<year||(Number(r.season)===year&&Number(r.week)<cut)));
+ const ids=new Set(rows.map(r=>String(r.player_id||'').trim()).filter(Boolean));
+ if(ids.size>1)return {ambiguous:true,rows:[],conflicts:0};
+ const fields=['player_id','team','opponent','position',...Object.keys(MARKET)], map=new Map(), bad=new Set();
+ for(const r of rows){const k=Number(r.season)*100+Number(r.week);if(!map.has(k))map.set(k,r);else if(fields.some(f=>String(map.get(k)[f]??'')!==String(r[f]??'')))bad.add(k);}
+ return {ambiguous:false,conflicts:bad.size,rows:[...map.entries()].filter(([k])=>!bad.has(k)).sort((a,b)=>a[0]-b[0]).map(([,r])=>r).filter(r=>matchupNumber(r[market])!==null)};
+}
+function matchupStats(rows,market){const a=rows.map(r=>matchupNumber(r[market])).filter(v=>v!==null);const n=a.length;if(!n)return {n:0};const avg=a.reduce((s,v)=>s+v,0)/n;const sorted=[...a].sort((x,y)=>x-y);return {n,avg,median:(sorted[Math.floor((n-1)/2)]+sorted[Math.floor(n/2)])/2,min:sorted[0],max:sorted[n-1],sd:n>1?Math.sqrt(a.reduce((s,v)=>s+(v-avg)**2,0)/(n-1)):null};}
+function matchupVenue(rows,schedule,year){
+ const buckets={home:[],away:[],neutral:[],unknown:[]}, map=new Map(),bad=new Set();
+ if(schedule?.ok&&Number(schedule.season)===year&&Array.isArray(schedule.records))for(const g of schedule.records){if(!g.played)continue;const k=weatherKey(year,Number(g.week),g.home,g.away);if(!k)continue;if(map.has(k))bad.add(k);else map.set(k,g);}
+ for(const r of rows){const k=weatherKey(year,Number(r.week),r.team,r.opponent),g=map.get(k),loc=String(g?.location||'').trim().toLowerCase();let bucket='unknown';if(g&&!bad.has(k)){if(loc==='neutral')bucket='neutral';else if(loc==='home'){const t=matchupTeam(r.team);if(t===matchupTeam(g.home))bucket='home';else if(t===matchupTeam(g.away))bucket='away';}}buckets[bucket].push(r);}
+ return buckets;
+}
+function renderMatchup(){
+ const el=$('matchupOutput');if(!el)return;
+ const player=$('player').value.trim(),market=$('market').value,year=Number($('season').value),cut=Number($('cutoff').value),opp=matchupTeam($('modelOpp').value);
+ el.className='status warn';if(dataset.seed_mode){el.textContent='Carga estadísticas reales para consultar este módulo.';return;}
+ if(!player||!MARKET[market]||!Number.isInteger(year)||!Number.isInteger(cut)||cut<1||cut>23){el.textContent='Selecciona jugador, estadística, temporada y semana de corte válidos.';return;}
+ const q=matchupRows(dataset.records,player,year,cut,market);if(q.ambiguous){el.textContent='Nombre ambiguo: hay más de una identidad en el archivo. No se mezclan registros.';return;}
+ const rows=q.rows.filter(r=>Number(r.season)===year),f=v=>v==null?'—':num(v),stat=rs=>matchupStats(rs,market);
+ const table=(head,body)=>'<div class="tablebox"><table class="tbl"><thead><tr>'+head.map(v=>'<th>'+esc(v)+'</th>').join('')+'</tr></thead><tbody>'+body.map(r=>'<tr>'+r.map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ const statRow=(label,rs)=>{const s=stat(rs);return [label,s.n,f(s.avg),f(s.median),f(s.sd),s.n?f(s.min)+' a '+f(s.max):'—'];};
+ let html='<b>'+esc(player)+' · '+esc(MARKET[market])+'</b><br>'+year+' · semanas anteriores a '+cut+' · '+rows.length+' registros con estadística válida.';
+ if(q.conflicts)html+='<p class="subtle">Se excluyeron '+q.conflicts+' jugador-semanas con registros conflictivos del periodo consultado.</p>';
+ html+='<h3>Tendencia y regularidad</h3>'+table(['Periodo','N','Media','Mediana','DE','Rango'],[statRow('Temporada',rows),...([3,5,10].map(n=>statRow('Últimos '+n,rows.slice(-n))))]);
+ html+='<p class="subtle">DE = desviación estándar muestral (misma unidad que la estadística); no es probabilidad. Las ventanas se superponen. N indica la muestra real, incluso cuando hay menos partidos que la ventana.</p>';
+ const venues=matchupVenue(rows,scheduleData,year);html+='<h3>Casa / visitante</h3>'+table(['Sede','N','Media','Mediana','DE','Rango'],[['Casa','home'],['Visitante','away'],['Neutral','neutral'],['Sin verificar','unknown']].map(([label,k])=>statRow(label,venues[k])));
+ html+='<p class="subtle">'+(scheduleData?.ok&&Number(scheduleData.season)===year?'Calendario nflverse de la temporada elegida; solo se enlazan partidos finalizados con sede explícita.':'El calendario disponible no confirma la localía de esta temporada. No se infiere a partir del rival.')+' No se atribuye ventaja a la localía.</p>';
+ const rivals=opp?q.rows.filter(r=>matchupTeam(r.opponent)===opp):[];
+ html+='<h3>Historial contra el rival</h3>'+(opp?'<b>'+esc(opp)+'</b> · '+rivals.length+' registros disponibles anteriores al corte.'+table(['Periodo','N','Media','Mediana','DE','Rango'],[statRow('Temporada elegida',rivals.filter(r=>Number(r.season)===year)),statRow('Historial disponible',rivals)])+(rivals.length?table(['Temporada','Sem.','Equipo','Resultado'],rivals.slice(-10).reverse().map(r=>[r.season,r.week,r.team,f(matchupNumber(r[market]))])):'<p class="subtle">No hay enfrentamientos con esta estadística; no equivale a cero.</p>'):'<p>Selecciona rival en Partido y mercado.</p>');
+ html+='<p class="subtle">Incluye temporadas anteriores disponibles y posibles equipos previos del jugador. Se excluye la semana de corte y temporadas futuras. Los enfrentamientos pasados no demuestran un efecto del rival.</p>';
+ const volume=[['Intentos de pase','attempts'],['Pases completos','completions'],['Acarreos','carries'],['Targets','targets'],['Recepciones','receptions']];
+ html+='<h3>Volumen ofensivo observado</h3>'+table(['Indicador','N temp.','Media temp.','N últ. 5','Media últ. 5'],volume.map(([label,key])=>{const a=matchupStats(rows,key),b=matchupStats(rows.slice(-5),key);return [label,a.n,f(a.avg),b.n,f(b.avg)];}));
+ html+='<p class="subtle">Volumen calculado en los registros con la estadística seleccionada; ceros explícitos se conservan y datos ausentes no se imputan. No contiene snaps, rutas, titularidad ni porcentaje de jugadas.</p><p class="subtle">Fuente: '+esc(dataset.source||'archivo de estadísticas')+'. Información descriptiva; no modifica el modelo ni estima resultados futuros.</p>';
+ el.innerHTML=html;el.className=rows.length?'status':'status warn';
+}
+$('refreshMatchup').addEventListener('click',renderMatchup);
+for(const id of ['player','market','season','cutoff','modelOpp'])$(id).addEventListener('change',renderMatchup);
+document.querySelector('[data-tab="modelo"]').addEventListener('click',renderMatchup);
+renderMatchup();
 
 </script>
 </body></html>
