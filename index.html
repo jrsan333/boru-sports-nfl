@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU Sports · NFL</title>
+<title>BÖRU NFL · Fase 2</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -15,18 +15,20 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
 .tablebox{overflow-x:auto}.tbl{width:100%;border-collapse:collapse;font-size:12px}.tbl th{text-align:left;font-size:11px;color:var(--muted);font-weight:750}.tbl td,.tbl th{padding:10px 6px;border-bottom:1px solid #263f50;white-space:nowrap}.tbl td:last-child,.tbl th:last-child{text-align:right}.mini{display:inline-block;font-size:10px;border:1px solid #45756d;border-radius:22px;padding:3px 6px;color:var(--teal)}.pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pill{border-radius:20px;padding:5px 8px;font-size:11px;color:#e0eee8;background:#1e3943}.pill.demo{color:#f8daa3;background:#3a2b1b}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cmp{border:1px solid #315466;padding:14px;border-radius:13px;background:#0a1c2b}.cmp h3{margin:0 0 9px;font-size:15px}.cmp .metric{margin-top:12px}.cmp .metric strong{font-size:25px}.cmp small{font-size:11px;color:var(--muted)}.mutebar{height:8px;border-radius:8px;overflow:hidden;background:#2b4352;margin:10px 0}.fill{height:100%;background:var(--teal);max-width:100%}.cmp .amber{background:#e0b379}.hidden{display:none!important}footer{font-size:11px;color:var(--muted);padding-top:19px;margin-top:20px;border-top:1px solid var(--line)}input[type=file]{max-width:100%;color:var(--muted);font-size:12px;margin:8px 0}.install{padding:10px;background:#112b35;border:1px dashed #486c75;border-radius:12px;margin-top:11px}.install strong{display:block;font-size:13px}.space{height:15px}ol{padding-left:20px;color:var(--muted);margin:9px 0}li{margin:5px 0}.provenance{display:inline-block;font-size:10px;color:var(--amber);margin-left:6px}
 @media(max-width:700px){.shell{padding:0 11px 64px}.topbar{padding-top:16px}.grid{grid-template-columns:1fr;gap:11px}.card{padding:15px;border-radius:16px}.full{grid-column:auto}.comparison{gap:9px}.cmp{padding:11px}.kpi{padding:11px 9px}.kpi strong{font-size:21px}.nav{margin-bottom:17px}.brand strong{font-size:17px}.brandlogo{height:42px;width:42px}.sync{font-size:10px}.axis{font-size:10px}}
 @media(max-width:380px){.fields3{grid-template-columns:1fr 1fr}.kpi strong{font-size:18px}.cmp h3{font-size:13px}.comparison{grid-template-columns:1fr}}
+.nav{grid-template-columns:repeat(4,1fr)}
+.nav button{padding:12px 2px;font-size:12px}.model-output{padding-top:12px}.info-well{padding:10px;border:1px solid #38596d;border-radius:11px;background:#0d202e;margin:10px 0;color:#e8faf6;font-weight:650}.forecast{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}.forecast .kpi{min-width:95px;flex:1}.forecast .kpi strong{font-size:20px}.analysis-status{font-size:12px;margin:11px 0}.status a{color:inherit}.meterline{height:12px;border-radius:12px;overflow:hidden;display:flex;background:#334b59;margin:10px 0}.meterline>span:first-child{background:#55d8bb}.meterline>span:last-child{background:#dba75a}#otherCoords[hidden]{display:none!important}@media(max-width:380px){.nav button{font-size:11px}.nav{gap:3px;padding:4px}}
 </style>
 </head>
 <body>
 <div class="shell">
 <header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
-<nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button></nav>
+<nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 1</div><h1>Los números primero.</h1><p>Estadísticas reales cuando se conecte la fuente, historial verificable y comparación de Draftea vs Playdoit. Sin promesas de apuestas seguras.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
-  <div class="card full"><h2>Qué estamos construyendo</h2><div class="pills"><span class="pill">✓ Histórico por jugador</span><span class="pill">✓ Cotejo de momios</span><span class="pill">✓ Importar CSV</span><span class="pill">⏳ Datos automáticos al publicar</span><span class="pill">⏳ Modelo validado</span><span class="pill">⏳ Parlays</span></div><p class="subtle" style="margin-top:14px">Esta versión muestra frecuencias históricas, no probabilidades predictivas calibradas. El modelo y los parlays vendrán después de validación retrospectiva.</p></div>
+  <div class="card full"><h2>Qué estamos construyendo</h2><div class="pills"><span class="pill">✓ Histórico por jugador</span><span class="pill">✓ Cotejo de momios</span><span class="pill">✓ Importar CSV</span><span class="pill">✓ Datos semanales automáticos</span><span class="pill">✓ Modelo exploratorio + pruebas retrospectivas</span><span class="pill">⏳ Modelo validado</span><span class="pill">⏳ Parlays</span></div><p class="subtle" style="margin-top:14px">La pestaña Modelo calcula estimaciones experimentales y mide errores en partidos pasados. No hay calibración completa ni un motor de parlays todavía.</p></div>
  </div>
 </section>
 <section class="page" id="page-jugador">
@@ -38,13 +40,69 @@ label{display:block;font-size:12px;font-weight:750;color:#c6d7df;margin-bottom:6
  </div>
 </section>
 <section class="page" id="page-comparador">
- <div class="hero"><div class="eyebrow">02 / Líneas de apuesta</div><h1>Draftea vs. Playdoit</h1><p>Compara momios reales capturados. La frecuencia histórica es descriptiva; NO equivale a probabilidad futura ni a valor esperado.</p></div>
+ <div class="hero"><div class="eyebrow">02 / Líneas de apuesta</div><h1>Draftea vs. Playdoit</h1><p>Compara momios reales capturados. La frecuencia histórica es descriptiva. Usa la pestaña Modelo para estimaciones experimentales, todavía no validadas.</p></div>
  <div class="grid"><div class="card full"><h2 id="compMarketTitle">Mercado: Joe Burrow · passing yards</h2><p class="subtle">Cuotas registradas de las capturas del 23 nov 2026, sujetas a cambio. Ajusta la línea y los momios si cambian en la casa.</p><div class="comparison" style="margin-top:15px"><div class="cmp"><h3>🟢 Draftea</h3><label for="dLine">Línea (Over)</label><input id="dLine" type="number" step="0.5" value="308.5"><div class="field"><label for="dOdds">Momio americano</label><input id="dOdds" value="-115" inputmode="text"></div></div><div class="cmp"><h3>🟠 Playdoit</h3><label for="pLine">Línea (Over)</label><input id="pLine" type="number" step="0.5" value="299.5"><div class="field"><label for="pOdds">Momio americano</label><input id="pOdds" value="-155" inputmode="text"></div></div></div><div class="btns"><button class="btn primary" id="compare">Comparar líneas</button></div></div>
- <div class="card full"><h2>Comparación descriptiva</h2><div id="comparisonOutput"></div><div class="status warn">Los porcentajes históricos no tienen calibración predictiva ni ajuste por lesiones, rival o clima. Si no hay modelo validado no se declara ventaja estadística.</div></div>
+ <div class="card full"><h2>Comparación descriptiva</h2><div id="comparisonOutput"></div><div class="status warn">Los porcentajes en esta pestaña son frecuencias pasadas. El modelo experimental está separado para evitar confundir historial con probabilidad futura.</div></div>
  <div class="card full"><h2>Escalera guardada de las capturas</h2><div class="tablebox" id="ladders"></div><p class="subtle">Draftea «309+» es equivalente a Over 308.5. Los precios se transcribieron de tus imágenes; no son cuotas en vivo.</p></div>
  </div>
 </section>
-<footer>BÖRU Sports Analytics · App fase 1 · Actualización automática de estadísticas por GitHub Actions · Datos NFL: <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a> (CC BY 4.0 donde corresponda). No realiza apuestas ni accede a tus cuentas. Proyecciones predictivas pendientes de validación.</footer>
+
+<section class="page" id="page-modelo">
+  <div class="hero"><div class="eyebrow">03 / Fase 2 · Prototipo experimental</div><h1>Laboratorio Over / Under</h1>
+  <p>Modelo de referencia basado en resultados previos, ajuste moderado por rival y evaluación retrospectiva. Sus porcentajes <b>no están calibrados para apostar</b>.</p></div>
+  <div class="grid">
+    <div class="card"><h2>1. Partido y mercado</h2>
+      <p class="subtle">Usa la selección que tienes en «Jugadores». El corte excluye la semana del partido.</p>
+      <div class="info-well" id="modelPlayerLabel">Cargando jugador…</div>
+      <div class="fields2 field"><div><label for="modelOpp">Rival (abreviatura NFL)</label><input id="modelOpp" list="teamCodes" placeholder="WAS" maxlength="3" autocapitalize="characters"></div>
+      <div><label for="modelLine">Línea Over</label><input id="modelLine" type="number" step="0.5" min="0" value="308.5"></div></div>
+      <datalist id="teamCodes"><option value="ARI"><option value="ATL"><option value="BAL"><option value="BUF"><option value="CAR"><option value="CHI"><option value="CIN"><option value="CLE"><option value="DAL"><option value="DEN"><option value="DET"><option value="GB"><option value="HOU"><option value="IND"><option value="JAX"><option value="KC"><option value="LAC"><option value="LAR"><option value="LV"><option value="MIA"><option value="MIN"><option value="NE"><option value="NO"><option value="NYG"><option value="NYJ"><option value="PHI"><option value="PIT"><option value="SEA"><option value="SF"><option value="TB"><option value="TEN"><option value="WAS"></datalist>
+      <div class="field"><label for="modelAvailability">Disponibilidad del jugador (verificada manualmente)</label><select id="modelAvailability">
+        <option value="unknown">Sin verificar — no asumir que jugará</option><option value="active">Confirmado activo / disponible</option><option value="limited">Entrenamiento limitado / Questionable</option><option value="doubtful">Doubtful / situación incierta</option><option value="out">Out / descartado</option>
+      </select></div>
+      <p class="subtle">Comprueba estado en <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">reporte oficial NFL</a> y lista de inactivos. No se consultan automáticamente lesiones, sanciones ni estado emocional.</p>
+      <div class="field"><label for="teamNotes">Cambios de rol, bajas ofensivas o noticias verificadas (notas manuales)</label><input id="teamNotes" placeholder="Ej.: WR titular OUT (confirmado por equipo)" maxlength="240"></div>
+      <div class="field"><label style="display:flex;align-items:flex-start;gap:8px;line-height:1.5"><input id="modelOddsVerified" type="checkbox" style="width:18px;height:18px;margin-top:2px"> Confirmé que actualicé los momios y líneas del Comparador para este jugador y partido.</label></div>
+      <div class="btns"><button class="btn primary" id="runModel">Analizar Over / Under</button></div>
+    </div>
+    <div class="card"><h2>2. Resultado exploratorio</h2>
+      <div class="status warn">No es recomendación de apuesta. Si faltan datos o el jugador está descartado, el sistema bloquea la proyección.</div>
+      <div id="modelOutput" class="model-output"><p class="muted">Selecciona un jugador, rival y línea, luego pulsa Analizar.</p></div>
+    </div>
+    <div class="card"><h2>3. Clima a la hora de inicio</h2>
+      <p class="subtle">Pronóstico automático de Open-Meteo, usando las coordenadas aproximadas del estadio seleccionado. Solo partidos próximos. Hora local del estadio.</p>
+      <div class="field"><label for="stadium">Estadio / ubicación aproximada</label><select id="stadium">
+        <option value="">Selecciona un estadio…</option>
+        <option value="BUF">Buffalo · Highmark Stadium (abierto)</option>
+        <option value="CIN">Cincinnati · Paycor Stadium (abierto)</option>
+        <option value="WAS">Washington · Northwest Stadium (abierto)</option>
+        <option value="GB">Green Bay · Lambeau Field (abierto)</option>
+        <option value="KC">Kansas City · Arrowhead (abierto)</option>
+        <option value="CHI">Chicago · Soldier Field (abierto)</option>
+        <option value="PHI">Philadelphia · Lincoln Financial Field (abierto)</option>
+        <option value="PIT">Pittsburgh · Acrisure Stadium (abierto)</option>
+        <option value="NY">New Jersey · MetLife Stadium (abierto)</option>
+        <option value="MIA">Miami · Hard Rock Stadium (abierto)</option>
+        <option value="NE">Foxborough · Gillette Stadium (abierto)</option>
+        <option value="OTHER">Otro estadio — ingresar coordenadas</option>
+      </select></div>
+      <div class="fields2 field"><div><label for="kickoff">Inicio · hora local del estadio</label><input id="kickoff" type="datetime-local"></div><div><label for="roof">Techo</label><select id="roof"><option value="open">Abierto / aire libre</option><option value="closed">Cerrado (confirmado)</option><option value="unknown">Retráctil, sin confirmar</option></select></div></div>
+      <div class="fields2 field" id="otherCoords" hidden><div><label for="weatherLat">Latitud</label><input id="weatherLat" inputmode="decimal" type="number" step="any" placeholder="39.0"></div><div><label for="weatherLon">Longitud</label><input id="weatherLon" inputmode="decimal" type="number" step="any" placeholder="-84.5"></div></div>
+      <div class="btns"><button class="btn secondary" id="checkWeather">Consultar clima</button></div>
+      <div id="weatherOutput" class="status warn">Sin consulta meteorológica. El clima no modifica todavía la proyección; primero validaremos su efecto con datos históricos.</div>
+    </div>
+    <div class="card"><h2>4. Prueba retrospectiva</h2>
+      <p class="subtle">Se predice cada partido usando únicamente juegos anteriores del mismo jugador. Sin consultar cuotas históricas de las casas.</p>
+      <div id="backtestOutput"><p class="muted">Pulsa «Analizar Over / Under» para calcular la evaluación.</p></div>
+      <div class="status warn">Error promedio pequeño ≠ probabilidades bien calibradas. Necesitamos más temporadas y pruebas independientes antes de hablar de ventaja real.</div>
+    </div>
+    <div class="card full"><h2>Qué entra y qué falta en este modelo</h2>
+      <div class="pills"><span class="pill">✓ Historial real</span><span class="pill">✓ Ajuste moderado por defensiva rival</span><span class="pill">✓ Prueba sin mirar resultados futuros</span><span class="pill">✓ Pronóstico de clima consultable</span><span class="pill">⚠ Lesiones: verificación manual</span><span class="pill">⚠ Noticias: verificación manual</span><span class="pill">⏳ Impacto del clima sin entrenar</span><span class="pill">⏳ Probabilidades calibradas</span></div>
+      <p class="subtle">Modelo exploratorio: media reciente más media global, dispersión histórica y ajuste de hasta ±8% por defensiva. La aproximación normal puede fallar para conteos, jugadores con pocos partidos o cambios de rol. No es un modelo de valor esperado validado.</p>
+    </div>
+  </div>
+</section>
+<footer>BÖRU Sports Analytics · App fase 2 (experimental) · Actualización automática de estadísticas por GitHub Actions · Datos NFL: <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a> (CC BY 4.0 donde corresponda). No realiza apuestas ni accede a tus cuentas. Proyecciones experimentales no calibradas; lesiones y noticias requieren revisión humana.</footer>
 </div>
 <script>
 'use strict';
@@ -82,5 +140,155 @@ $('analyze').addEventListener('click',()=>{renderPlayer();compare();renderLadder
 $('market').addEventListener('change',()=>{renderPlayer();compare();renderLadders();});
 
 loadData();
+</script>
+<script>
+'use strict';
+// BÖRU Fase 2 — heurística transparente. No probabilidades calibradas.
+const STADIUMS={
+ BUF:[42.7738,-78.7869],CIN:[39.0955,-84.5161],WAS:[38.9077,-76.8645],
+ GB:[44.5013,-88.0622],KC:[39.0489,-94.4839],CHI:[41.8623,-87.6167],
+ PHI:[39.9008,-75.1675],PIT:[40.4468,-80.0158],NY:[40.8135,-74.0745],
+ MIA:[25.9580,-80.2389],NE:[42.0909,-71.2643]};
+const MODEL_VERSION='0.1 — exploratorio';
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const mean=x=>x.length?x.reduce((a,b)=>a+b,0)/x.length:0;
+function sd(x){if(x.length<2)return 0;const m=mean(x);return Math.sqrt(x.reduce((sum,v)=>sum+(v-m)**2,0)/(x.length-1));}
+function normalCDF(x){ // Aproximación normal estándar (error ~1e-7)
+ const z=Math.abs(x),t=1/(1+.2316419*z),d=.3989422804014327*Math.exp(-z*z/2);
+ const p=1-d*t*(.319381530+t*(-.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+ return clamp(x>=0?p:1-p,0,1);
+}
+function priorRecords(player,market,season,cutoff){
+ return dataset.records.filter(r=>String(r.player||'').toLocaleLowerCase().trim()===player.toLocaleLowerCase().trim()&&
+ (Number(r.season)<season||(Number(r.season)===season&&Number(r.week)<cutoff))&&
+ Number(r.season)>=season-1&&r[market]!==null&&r[market]!==undefined&&r[market]!==''&&Number.isFinite(Number(r[market])))
+ .sort((a,b)=>Number(a.season)-Number(b.season)||Number(a.week)-Number(b.week));
+}
+function defensiveContext(team,market,season,cutoff){
+ const opponent=team.toUpperCase().trim();if(!opponent)return null;
+ // Una observación por equipo/partido, sumando las estadísticas individuales para ese ataque.
+ // Solo hasta la semana ANTERIOR al evento; nunca datos del partido que evaluamos.
+ const gameTotals=new Map();
+ for(const r of dataset.records){
+  if(Number(r.season)!==season||Number(r.week)>=cutoff||!r.week||!r.opponent||!r.team)continue;
+  const pos=String(r.position||'').toUpperCase();
+  if(['passing_yards','attempts','completions'].includes(market)&&pos!=='QB')continue;
+  if(['receiving_yards','receptions','targets'].includes(market)&&!['RB','FB','WR','TE'].includes(pos))continue;
+  if(['rushing_yards','carries'].includes(market)&&!['QB','RB','FB','WR','TE'].includes(pos))continue;
+  const x=r[market];if(x===null||x===undefined||x===''||!Number.isFinite(Number(x)))continue;
+  const key=[r.season,r.week,r.team,r.opponent].join('|');
+  const g=gameTotals.get(key)||{opponent:String(r.opponent).toUpperCase(),total:0};
+  g.total+=Number(x);gameTotals.set(key,g);
+ }
+ const league=[...gameTotals.values()].map(g=>g.total).filter(x=>x>0);
+ const against=[...gameTotals.values()].filter(g=>g.opponent===opponent&&g.total>0).map(g=>g.total);
+ if(league.length<50||against.length<4)return {enough:false,opponent,n:against.length};
+ const lg=mean(league),opp=mean(against);const raw=opp/lg-1;
+ return {enough:true,opponent,n:against.length,oppMean:opp,leagueMean:lg,adj:clamp(raw*.30,-.08,.08)};
+}
+function predictBaseline(player,market,season,cutoff,opponent){
+ const rows=priorRecords(player,market,season,cutoff).slice(-20);
+ if(rows.length<6)return {ok:false,n:rows.length};
+ const values=rows.map(r=>Number(r[market]));
+ const recent=values.slice(-5),global=mean(values);
+ const central=.65*mean(recent)+.35*global;
+ const dc=defensiveContext(opponent||'',market,season,cutoff);
+ const adj=dc?.enough?dc.adj:0;
+ const expected=Math.max(0,central*(1+adj));
+ const countMetric=['receptions','targets','attempts','completions','carries'].includes(market);
+ const dispersion=Math.max(sd(values),countMetric?Math.max(1.5,Math.sqrt(Math.max(1,central))*1.15):Math.max(8,Math.abs(central)*.18));
+ return {ok:true,n:values.length,mu:expected,sigma:dispersion,central,adj,defense:dc,history:values};
+}
+function pOver(model,line){return clamp(1-normalCDF((line-model.mu)/model.sigma),0,1);}
+function walkForward(player,market,season,cutoff){
+ const rows=priorRecords(player,market,season,cutoff);
+ let absolute=[],baseline=[],covered=0,overCount=0;
+ for(const g of rows){
+  if(!Number.isFinite(Number(g.week))||Number(g.week)<=1)continue;
+  const test=predictBaseline(player,market,Number(g.season),Number(g.week),g.opponent||'');
+  if(!test.ok)continue;
+  const actual=Number(g[market]);
+  absolute.push(Math.abs(test.mu-actual));
+  baseline.push(Math.abs(mean(test.history)-actual));
+  if(Math.abs(actual-test.mu)<=1.28155*test.sigma)covered++;
+  overCount++;
+ }
+ return {n:absolute.length,mae:mean(absolute),naive:mean(baseline),coverage:overCount?covered/overCount:0};
+}
+function modelSelectLabel(){
+ const p=$('player').value.trim(),m=$('market').value,season=$('season').value,cutoff=$('cutoff').value;
+ $('modelPlayerLabel').textContent=`${p||'Jugador no seleccionado'} · ${MARKET[m]||m} · ${season} · datos anteriores a la semana ${cutoff}`;
+}
+function fmtP(p){return (p*100).toFixed(1)+'%';}
+function modelOddsRow(book,lineId,oddsId,model){
+ const line=Number($(lineId).value),odds=$(oddsId).value.trim(),decimal=oddsToDecimal(odds);
+ if(!Number.isFinite(line)||!decimal)return '';
+ const p=pOver(model,line),breakEven=1/decimal,delta=p-breakEven;
+ return `<tr><td>${esc(book)}</td><td>${num(line)}</td><td>${esc(odds)}</td><td>${fmtP(breakEven)}</td><td>${fmtP(p)}*</td><td>${delta>=0?'+':''}${(100*delta).toFixed(1)} pp*</td></tr>`;
+}
+function runModel(){
+ modelSelectLabel();
+ const player=$('player').value.trim(),market=$('market').value,season=Number($('season').value),cutoff=Number($('cutoff').value);
+ const line=Number($('modelLine').value),opp=$('modelOpp').value.trim().toUpperCase(),avail=$('modelAvailability').value;
+ const out=$('modelOutput'),back=$('backtestOutput');
+ if(dataset.seed_mode){out.innerHTML='<div class="status error">Solo hay datos de muestra. Primero carga estadísticas NFL reales.</div>';back.innerHTML='';return;}
+ if(!player||!Number.isInteger(season)||!Number.isInteger(cutoff)||cutoff<2||cutoff>23||!$('modelLine').value.trim()||!Number.isFinite(line)||line<0){out.innerHTML='<div class="status warn">Revisa jugador, temporada, corte y línea.</div>';back.innerHTML='';return;}
+ if(avail==='out'){out.innerHTML='<div class="status error">Jugador marcado como OUT. No se calcula pronóstico. Verifica el reporte oficial y las reglas de anulación de cada casa.</div>';back.innerHTML='';return;}
+ if(avail==='doubtful'){out.innerHTML='<div class="status warn">Participación muy incierta: se suspende la proyección hasta confirmar disponibilidad. No supongas que jugará.</div>';back.innerHTML='';return;}
+ const pred=predictBaseline(player,market,season,cutoff,opp);
+ if(!pred.ok){out.innerHTML=`<div class="status warn">Solo hay ${pred.n} partidos previos para ${esc(player)}. Se necesitan al menos 6; no calculamos probabilidades.</div>`;back.innerHTML='';return;}
+ const p=pOver(pred,line),lower=Math.max(0,pred.mu-1.28155*pred.sigma),upper=pred.mu+1.28155*pred.sigma;
+ const alerts=[];
+ if(avail==='unknown')alerts.push('Disponibilidad NO verificada; confirma reporte de lesiones y lista de inactivos.');
+ if(avail==='limited')alerts.push('Jugador limitado / questionable; el modelo no sabe estimar sus restricciones físicas.');
+ if(!opp)alerts.push('Sin rival: falta ajuste por defensiva.');
+ else if(!pred.defense?.enough)alerts.push(`Muestra insuficiente de defensa ${esc(opp)}: se usa ajuste 0%.`);
+ if($('teamNotes').value.trim())alerts.push('Hay novedades manuales del equipo que todavía NO se cuantifican ni verifican automáticamente.');
+ const sourceWarning=!$('modelOddsVerified').checked;
+ const bookmaker=sourceWarning?'<div class="status warn">Para comparar probabilidades con las casas, captura las cuotas ACTUALES de este jugador en Comparador y confirma arriba que las verificaste. Las cuotas precargadas son del caso histórico Burrow.</div>':`<div class="tablebox"><table class="tbl"><thead><tr><th>Casa</th><th>Línea</th><th>Momio</th><th>Equilibrio</th><th>Over*</th><th>Diferencia*</th></tr></thead><tbody>${modelOddsRow('Draftea','dLine','dOdds',pred)}${modelOddsRow('Playdoit','pLine','pOdds',pred)}</tbody></table></div>`;
+ out.innerHTML=`<p class="subtle">${esc(player)} · ${esc(MARKET[market])} · ${season} · semana ${cutoff}</p>
+ <div class="forecast"><div class="kpi"><span>Estimación central*</span><strong>${num(pred.mu)}</strong><em>unidades del mercado</em></div><div class="kpi"><span>Prob. Over*</span><strong>${fmtP(p)}</strong><em>línea ${num(line)}</em></div><div class="kpi"><span>Prob. Under*</span><strong>${fmtP(1-p)}</strong><em>sin margen de casa</em></div></div>
+ <div class="meterline"><span style="width:${p*100}%"></span><span style="width:${(1-p)*100}%"></span></div>
+ <p class="subtle">Intervalo predictivo aproximado 80%: <b>${num(lower)}–${num(upper)}</b>. Base ${num(pred.central)}, ajuste rival ${pred.adj>=0?'+':''}${(pred.adj*100).toFixed(1)}% (${pred.defense?.enough?pred.defense.n+' juegos de defensa':'no estimable'}). ${pred.n} partidos previos.</p>
+ ${alerts.length?`<div class="status warn analysis-status">${alerts.map(a=>'• '+a).join('\n')}</div>`:''}
+ <h3 style="margin:19px 0 7px">Comparación de momios</h3>${bookmaker}
+ <p class="subtle">*Son números de un modelo <b>experimental</b>; diferencias vs equilibrio no constituyen valor esperado fiable. Sin calibración ni modelado de las lesiones, no se recomienda ninguna selección.</p>`;
+ const bt=walkForward(player,market,season,cutoff);
+ back.innerHTML=bt.n<5?`<div class="status warn">${bt.n} predicciones retrospectivas evaluables. Muestra insuficiente para una prueba útil (mínimo exploratorio: 5).</div>`:
+ `<div class="forecast"><div class="kpi"><span>Pronósticos evaluados</span><strong>${bt.n}</strong></div><div class="kpi"><span>Error medio absoluto</span><strong>${num(bt.mae)}</strong></div><div class="kpi"><span>Error referencia simple</span><strong>${num(bt.naive)}</strong></div></div>
+ <p class="subtle">Cobertura observada del intervalo aproximado 80%: <b>${fmtP(bt.coverage)}</b> (${bt.n} partidos). Un valor cercano a 80% no valida por sí solo la probabilidad Over/Under.</p>`;
+}
+// Open-Meteo solo retorna pronóstico de corto plazo, no observaciones de partidos históricos.
+async function checkWeather(){
+ const el=$('weatherOutput'),venue=$('stadium').value,raw=$('kickoff').value,roof=$('roof').value;
+ if(!venue||!raw){el.className='status warn';el.textContent='Elige estadio y fecha/hora local del kickoff.';return;}
+ let coords=STADIUMS[venue];
+ if(venue==='OTHER')coords=[Number($('weatherLat').value),Number($('weatherLon').value)];
+ if(!coords||!Number.isFinite(coords[0])||!Number.isFinite(coords[1])||Math.abs(coords[0])>90||Math.abs(coords[1])>180){el.className='status warn';el.textContent='Ingresa coordenadas válidas del estadio.';return;}
+ const date=raw.slice(0,10),hour=Number(raw.slice(11,13));
+ // diferencia de fechas en UTC (solo para acotar disponibilidad; la hora del partido es local del estadio).
+ const days=(Date.parse(date+'T00:00:00Z')-Date.parse(new Date().toISOString().slice(0,10)+'T00:00:00Z'))/86400000;
+ if(days<0||days>15){el.className='status warn';el.textContent='Open-Meteo ofrece pronósticos para partidos próximos (hasta aproximadamente 16 días). Para un partido pasado hace falta otra fuente meteorológica histórica.';return;}
+ el.className='status warn';el.textContent='Consultando pronóstico meteorológico…';
+ const url=new URL('https://api.open-meteo.com/v1/forecast');
+ const args={latitude:coords[0],longitude:coords[1],timezone:'auto',start_date:date,end_date:date,wind_speed_unit:'kmh',hourly:'temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation_probability,precipitation,snowfall'};
+ Object.entries(args).forEach(([k,v])=>url.searchParams.set(k,String(v)));
+ const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),9000);
+ try{
+  const r=await fetch(url.toString(),{signal:ac.signal});if(!r.ok)throw Error('Respuesta '+r.status);
+  const j=await r.json(),idx=j.hourly?.time?.findIndex(t=>t.startsWith(date+'T'+String(hour).padStart(2,'0')));
+  if(idx==null||idx<0)throw Error('No existe pronóstico para esa hora');
+  const h=j.hourly;
+  const val=k=>h[k]?.[idx]??'—';
+  el.className='status';
+  el.innerHTML=`<b>Pronóstico cerca del estadio para ${esc(raw.replace('T',' '))}</b><br>Temperatura: <b>${esc(val('temperature_2m'))} °C</b> · Viento: <b>${esc(val('wind_speed_10m'))} km/h</b> · Ráfagas: <b>${esc(val('wind_gusts_10m'))} km/h</b><br>Prob. precipitación: <b>${esc(val('precipitation_probability'))}%</b> · Lluvia: <b>${esc(val('precipitation'))} mm</b> · Nieve: <b>${esc(val('snowfall'))} cm</b><br><span class="subtle">${roof==='closed'?'Techo cerrado confirmado: el clima exterior no afecta directamente el juego.':roof==='unknown'?'Techo sin confirmar: no se infiere exposición del partido.':'Estadio abierto: información contextual; aún no modifica la estimación.'} Fuente: Open-Meteo (pronóstico, sujeto a cambios). No se guarda como observación histórica.</span>`;
+ }catch(e){el.className='status warn';el.textContent='Pronóstico no disponible: '+e.message+'. Puedes continuar sin clima; la proyección no cambiará.';}finally{clearTimeout(tm);}
+}
+$('runModel').addEventListener('click',runModel);
+for(const id of ['player','market','season','cutoff'])$(id).addEventListener('change',()=>{$('modelOddsVerified').checked=false;});
+$('checkWeather').addEventListener('click',checkWeather);
+$('stadium').addEventListener('change',()=>{$('otherCoords').hidden=$('stadium').value!=='OTHER';});
+document.querySelector('[data-tab="modelo"]').addEventListener('click',modelSelectLabel);
+
 </script>
 </body></html>
