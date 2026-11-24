@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 3.2 — Weather Impact</title>
+<title>BÖRU NFL · Fase 3.3 — News Radar Plus</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -63,10 +63,10 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.2.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.3.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.2</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.3</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -127,7 +127,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
         <option value="unknown">Sin verificar — no asumir que jugará</option><option value="active">Confirmado activo / disponible</option><option value="limited">Entrenamiento limitado / Questionable</option><option value="doubtful">Doubtful / situación incierta</option><option value="out">Out / descartado</option>
       </select></div>
       <p class="subtle">Comprueba estado en <a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">reporte oficial NFL</a> y lista de inactivos. El radar consulta una fuente secundaria de lesiones; no verifica inactivos, sanciones, prácticas ni estado emocional automáticamente.</p>
-      <div class="field" id="newsRadar"><h2>News Radar · Noticias recientes</h2><p class="subtle">Titulares de los últimos 21 días que mencionan al jugador o a su equipo. Etiquetas por palabras clave; no son diagnósticos, sanciones confirmadas ni análisis emocional. No modifican la estimación.</p><div id="newsOutput" class="status warn" aria-live="polite">Abre Modelo para consultar noticias.</div><div class="btns"><button type="button" class="btn secondary" id="reloadNews">Actualizar noticias publicadas</button></div><p class="subtle"><a href="https://www.nfl.com/news/" target="_blank" rel="noopener">Noticias NFL</a> · <a href="https://www.nfl.com/transactions/" target="_blank" rel="noopener">Transacciones oficiales</a> · <a href="https://www.espn.com/nfl/" target="_blank" rel="noopener">ESPN NFL</a>. Una ausencia de titulares no confirma que no haya sanciones o lesiones. Revisa las fechas y el artículo original.</p></div>
+      <div class="field" id="newsRadar"><h2>News Radar Plus · Noticias recientes</h2><p class="subtle">Titulares de los últimos 21 días, separados por jugador y equipo, con filtro de publicidad y prioridades temáticas. Son menciones y reportes, no hechos verificados ni análisis emocional. No modifican la estimación.</p><div id="newsOutput" class="status warn" aria-live="polite">Abre Modelo para consultar noticias.</div><div class="btns"><button type="button" class="btn secondary" id="reloadNews">Actualizar noticias publicadas</button></div><p class="subtle"><a href="https://www.nfl.com/news/" target="_blank" rel="noopener">Noticias NFL</a> · <a href="https://www.nfl.com/transactions/" target="_blank" rel="noopener">Transacciones oficiales</a> · <a href="https://www.espn.com/nfl/" target="_blank" rel="noopener">ESPN NFL</a>. Una ausencia de titulares no confirma que no haya sanciones o lesiones. Revisa las fechas y el artículo original.</p></div>
       <div class="field" id="teamImpact"><h2>Team Impact · Contexto de compañeros</h2><p class="subtle">Cruza plantilla actual y reportes ESPN. Volumen ofensivo histórico del mismo equipo antes de la semana de corte. No identifica titulares ni predice el efecto de una baja.</p><label for="impactFilter">Grupo de posición</label><select id="impactFilter"><option value="QB">Quarterbacks</option><option value="RB">Corredores</option><option value="WR" selected>Receptores</option><option value="TE">Alas cerradas</option><option value="OL">Línea ofensiva</option><option value="ALL">Todos los grupos</option></select><div class="status warn" id="teamImpactOutput" aria-live="polite">Abre Modelo para consultar compañeros.</div><div class="btns"><button type="button" class="btn secondary" id="reloadImpact">Actualizar contexto del equipo</button></div><p class="subtle"><a href="https://www.nfl.com/injuries/" target="_blank" rel="noopener">Reporte oficial NFL</a> · <a href="https://www.nfl.com/transactions/" target="_blank" rel="noopener">Transacciones oficiales</a>.</p></div>
       <div class="field"><label for="teamNotes">Cambios de rol, bajas ofensivas o noticias verificadas (notas manuales)</label><input id="teamNotes" placeholder="Ej.: WR titular OUT (confirmado por equipo)" maxlength="240"></div>
       <div class="field"><label style="display:flex;align-items:flex-start;gap:8px;line-height:1.5"><input id="modelOddsVerified" type="checkbox" style="width:18px;height:18px;margin-top:2px"> Confirmé que actualicé los momios y líneas del Comparador para este jugador y partido.</label></div>
@@ -218,30 +218,49 @@ $('market').addEventListener('change',()=>{renderPlayer();compare();renderLadder
 
 loadData();
 
-// Fase 2.4: titulares fechados; clasificación temática, nunca confirmación automática.
+// Fase 3.3: filtro de ruido, grupos por alcance y clasificación temática; nunca confirmación automática.
 let newsData=null,newsRequest=0;
 const clubNames={ARI:'Cardinals',ATL:'Falcons',BAL:'Ravens',BUF:'Bills',CAR:'Panthers',CHI:'Bears',CIN:'Bengals',CLE:'Browns',DAL:'Cowboys',DEN:'Broncos',DET:'Lions',GB:'Packers',HOU:'Texans',IND:'Colts',JAX:'Jaguars',KC:'Chiefs',LV:'Raiders',LAC:'Chargers',LAR:'Rams',MIA:'Dolphins',MIN:'Vikings',NE:'Patriots',NO:'Saints',NYG:'Giants',NYJ:'Jets',PHI:'Eagles',PIT:'Steelers',SEA:'Seahawks',SF:'49ers',TB:'Buccaneers',TEN:'Titans',WAS:'Commanders'};
 function newsNorm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
 function newsContains(title,term){const n=newsNorm(term);return !!n&&(' '+newsNorm(title)+' ').includes(' '+n+' ');}
+function newsNoise(t){
+ const n=newsNorm(t);
+ return /\b(promo codes?|promotional codes?|sportsbook bonuses?|betting promos?|betting apps?|sportsbooks?|sign up bonus|welcome bonus|bonus bets?|deposit match|first touchdown scorer picks|best bets|betting preview|betting odds|betting picks|player props|odds prediction|odds nfl week|picks odds|odds picks|parlay picks|expert picks|fantasy football rankings|dfs picks)\b/.test(n)||/\b(predictions?|picks)\b.*\b(odds|betting|sportsbook|moneyline|spread)\b/.test(n)||/\b(odds|betting|sportsbook|moneyline|spread)\b.*\b(predictions?|picks)\b/.test(n)||/\bvs\b.*\bprediction\b/.test(n);
+}
 function newsTopic(t){
- if(/\b(suspend\w*|ban(?:ned|s)?|disciplin\w*|personal conduct|fine[ds]?|fined)\b/i.test(t))return 'Disciplina / posible sanción';
- if(/\b(arrest\w*|investigat\w*|alleg\w*|charg(?:ed|es)|lawsuit|court|police)\b/i.test(t))return 'Asunto legal / investigación';
- if(/\b(injur\w*|surgery|concussion|acl|mcl|hamstring|ruled out|inactive|injured reserve)\b/i.test(t))return 'Lesión / disponibilidad';
- if(/\b(trad\w*|release[ds]?|waiv\w*|sign(?:ed|s|ing)|coach\w*|bench\w*)\b/i.test(t))return 'Plantilla / rol / entrenador';
- return 'Noticia general';
+ const n=newsNorm(t);
+ if(/\b(suspended|suspensions?|suspends|suspend|fined|personal conduct policy|disciplinary action|ban(?:ned)?)\b/.test(n))return {label:'Disciplina / sanción reportada',rank:0};
+ if(/\b(injur\w*|surgery|concussion|acl|mcl|hamstring|ruled out|inactive|inactives|questionable|doubtful|injured reserve|limited practice|miss(?:es|ed|ing)? practice|returns? to practice)\b/.test(n))return {label:'Lesión / disponibilidad reportada',rank:0};
+ if(/\b(arrest\w*|criminal charges|charged with|lawsuit|indicted|police investigation|criminal investigation|allegations? of|court hearing|pleads? guilty)\b/.test(n))return {label:'Asunto legal reportado',rank:1};
+ if(/\b(traded|trade request|trade talks|waived|waiver claim|released by|signs? with|signed by|signs? a contract|benched|benching|named (?:the )?starter|starting quarterback|head coach|offensive coordinator|defensive coordinator|coach fired|coach hired|fired (?:as|by))\b/.test(n))return {label:'Plantilla / rol / entrenador',rank:2};
+ return {label:'Noticia general',rank:3};
 }
 function newsLink(v){try{const u=new URL(v);return u.protocol==='https:'&&['espn.com','nfl.com','cbssports.com'].some(d=>u.hostname===d||u.hostname.endsWith('.'+d))?u.href:null;}catch(e){return null;}}
-function newsMatches(records,player,club){return records.map(r=>({r,player:newsContains(r.title,player),team:newsContains(r.title,club)})).filter(x=>x.player||x.team).sort((a,b)=>Number(b.player)-Number(a.player)||Date.parse(b.r.published_at)-Date.parse(a.r.published_at));}
+function newsMatches(records,player,club){
+ const matches=records.filter(r=>r&&typeof r.title==='string').map(r=>({r,player:newsContains(r.title,player),team:newsContains(r.title,club)})).filter(x=>x.player||x.team);
+ const sorted=matches.filter(x=>!newsNoise(x.r.title)).map(x=>({...x,topic:newsTopic(x.r.title)})).sort((a,b)=>Number(b.player)-Number(a.player)||a.topic.rank-b.topic.rank||Date.parse(b.r.published_at)-Date.parse(a.r.published_at));
+ const seen=new Set(),list=[];
+ for(const x of sorted){const k=newsNorm(x.r.title);if(seen.has(k))continue;seen.add(k);list.push(x);}
+ return {list,filtered:matches.length-sorted.length,duplicates:sorted.length-list.length};
+}
 function renderNews(){
  const el=$('newsOutput'),{player,roster}=profileMatch();
  if(!newsData?.ok||!recentStamp(newsData.fetched_at,48)){el.className='status warn';el.textContent='Noticias no disponibles o descarga de más de 48 horas. Consulta las fuentes oficiales. No se puede confirmar disponibilidad.';return;}
  const club=clubNames[String(roster?.team||'').toUpperCase()]||'';
- const list=newsMatches(newsData.records.filter(r=>recentStamp(r.published_at,21*24)&&newsLink(r.url)),player,club);
+ const {list,filtered,duplicates}=newsMatches(newsData.records.filter(r=>r&&recentStamp(r.published_at,21*24)&&newsLink(r.url)),player,club);
  const coverage=(newsData.sources||[]).map(s=>esc(s.name)+': '+(s.ok?esc(s.count)+' titulares':'sin datos')).join(' · ');
- let html='<b>'+esc(player||'Selecciona jugador')+'</b><br><span class="subtle">Descarga: '+esc(injuryDate(newsData.fetched_at))+'<br>'+coverage+'</span>';
- if(!list.length)html+='<p>Sin coincidencias en los titulares disponibles. Esto no descarta noticias, sanciones ni lesiones.</p>';
- for(const x of list.slice(0,12)){const r=x.r;html+='<div class="source-row"><b>'+esc(newsTopic(r.title))+'</b><br><small>'+esc(x.player?'Mención por nombre completo':'Contexto del equipo; no atribuir al jugador')+' · '+esc(r.source)+' · '+esc(injuryDate(r.published_at))+'</small><br><a href="'+esc(newsLink(r.url))+'" target="_blank" rel="noopener noreferrer">'+esc(r.title)+'</a></div>';}
- html+='<p class="subtle">Titulares originales en inglés; abre el artículo para distinguir hechos confirmados, rumores y alegaciones. No se infiere estado emocional.</p>';
+ let html='<b>'+esc(player||'Selecciona jugador')+'</b><br><span class="subtle">Descarga: '+esc(injuryDate(newsData.fetched_at))+'<br>'+coverage+'<br>Coincidencias tras filtro: '+list.length+' · Publicidad/pronósticos filtrados: '+filtered+' · Duplicados exactos: '+duplicates+'</span>';
+ const groups=[['Menciones por nombre completo',list.filter(x=>x.player),'Mención textual; no confirma que el hecho se refiera al jugador.'],['Contexto del equipo'+(club?' · '+club:''),list.filter(x=>!x.player),'No atribuir estas noticias al jugador.']];
+ const ranks=['Alta','Media-alta','Media','Informativa'];
+ for(const [label,items,note] of groups){
+  html+='<div class="source-row"><b>'+esc(label)+' · '+items.length+'</b><small>'+esc(note)+'</small>';
+  if(!items.length)html+='<p class="subtle">Sin coincidencias disponibles tras el filtro.</p>';
+  for(const x of items.slice(0,8)){const r=x.r;html+='<div class="source-row"><b>'+esc(ranks[x.topic.rank]+' · '+x.topic.label)+'</b><small>'+esc(r.source)+' · '+esc(injuryDate(r.published_at))+'</small><br><a href="'+esc(newsLink(r.url))+'" target="_blank" rel="noopener noreferrer">'+esc(r.title)+'</a></div>';}
+  if(items.length>8)html+='<details class="source-row"><summary>Ver '+(items.length-8)+' titulares adicionales</summary>'+items.slice(8).map(x=>{const r=x.r;return '<div class="source-row"><b>'+esc(ranks[x.topic.rank]+' · '+x.topic.label)+'</b><small>'+esc(r.source)+' · '+esc(injuryDate(r.published_at))+'</small><br><a href="'+esc(newsLink(r.url))+'" target="_blank" rel="noopener noreferrer">'+esc(r.title)+'</a></div>';}).join('')+'</details>';
+  html+='</div>';
+ }
+ if(!club)html+='<p class="subtle">Equipo no identificado en la plantilla de la temporada seleccionada; solo se buscan menciones por nombre.</p>';
+ html+='<p class="subtle">Titulares originales en inglés. Noticias actuales, no reconstrucción histórica. Filtros y prioridades por palabras clave: pueden omitir o clasificar mal noticias. Abre el artículo y verifica fuentes oficiales; ninguna etiqueta confirma hechos ni disponibilidad. No se infiere estado emocional ni se modifica la estimación.</p>';
  el.className='status warn';el.innerHTML=html;
 }
 async function loadNews(){const id=++newsRequest;const el=$('newsOutput');el.className='status warn';el.textContent='Consultando titulares publicados…';const ac=new AbortController(),timer=setTimeout(()=>ac.abort(),9000);try{const r=await fetch('./data/news.json?ts='+Date.now(),{cache:'no-store',signal:ac.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(!Array.isArray(d.records))throw Error('Formato');if(id!==newsRequest)return;newsData=d;renderNews();}catch(e){if(id===newsRequest){newsData=null;renderNews();}}finally{clearTimeout(timer);}}
