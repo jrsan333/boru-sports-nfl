@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08121d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BÖRU NFL">
 
-<title>BÖRU NFL · Fase 3.0 — Laboratorio estadístico</title>
+<title>BÖRU NFL · Fase 3.1 — Validación masiva</title>
 <style>
 :root{color-scheme:dark;--bg:#080f19;--panel:#111e2d;--panel2:#152438;--line:#2b4253;--txt:#f1f8fa;--muted:#a8bbc8;--teal:#69ead1;--tealfade:#173b3a;--red:#ff9b99;--amber:#ffd392}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#143c4b 0,transparent 55%),var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -63,10 +63,10 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
 </head>
 <body>
 <div class="shell">
-<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.0.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
+<header class="topbar"><div class="brand"><div class="brandlogo">B</div><div><small>SPORTS ANALYTICS</small><strong>BÖRU · NFL</strong><small style="display:block;letter-spacing:.04em;margin-top:3px">v3.1.0</small></div></div><span class="sync" id="sourceBadge">Datos de muestra</span></header>
 <nav class="nav" aria-label="Secciones"><button data-tab="inicio" class="active">Inicio</button><button data-tab="jugador">Jugadores</button><button data-tab="comparador">Comparador</button><button data-tab="modelo">Modelo</button></nav>
 <section class="page active" id="page-inicio">
- <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.0</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
+ <div class="hero"><div class="eyebrow">Laboratorio NFL · Fase 3.1</div><h1>Los números primero.</h1><p>Estadísticas semanales reales, análisis experimental Over/Under y contexto de partido. El modelo todavía no ha demostrado ventaja frente a las cuotas.</p></div>
  <div class="grid">
   <div class="card"><h2>Partido de referencia</h2><div class="pills"><span class="pill">CIN vs WAS</span><span class="pill">23 nov 2026</span><span class="pill demo">Corte previo: semana 12</span></div><h2 style="font-size:25px;margin:18px 0 6px">Joe Burrow</h2><p>Passing yards · Primera comparación de la app</p><div class="kpis" id="homeKpis" style="margin-top:16px"><div class="kpi"><span>Partidos</span><strong>—</strong></div><div class="kpi"><span>Media</span><strong>—</strong></div><div class="kpi"><span>Últimos 5</span><strong>—</strong></div></div><div class="btns"><button class="btn primary" data-go="jugador">Ver estadísticas</button><button class="btn secondary" data-go="comparador">Comparar cuotas</button></div></div>
   <div class="card"><h2>Estado de los datos</h2><p id="dataInfo">Cargando datos iniciales…</p><div class="status warn" id="dataStatus">El historial precargado es una muestra del análisis anterior. La actualización automática requiere publicar esta app.</div><div class="btns"><button class="btn secondary" id="reloadData">Buscar actualización</button></div><div class="install"><strong>📲 Convertir en app del iPhone</strong><p class="subtle">Cuando esté publicada en HTTPS: abre en Safari → Compartir → Agregar a pantalla de inicio.</p></div></div>
@@ -171,6 +171,7 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;min-widt
       <div class="status warn">Error promedio pequeño ≠ probabilidades bien calibradas. Necesitamos más temporadas y pruebas independientes antes de hablar de ventaja real.</div>
     </div>
     <div class="card full"><h2>6. Laboratorio estadístico · Fase 3.0</h2><p class="subtle">Auditoría cronológica de cuatro métodos de estimación de rendimiento. Se usa el jugador, estadística, temporada y corte de Jugadores. No requiere línea ni momios. Los métodos están fijados antes de evaluar; cada juego usa solo registros de semanas anteriores.</p><div class="btns"><button class="btn primary" id="runAudit">Evaluar historial</button></div><div id="auditOutput" class="status" aria-live="polite">Pulsa «Evaluar historial» para comparar los métodos.</div></div>
+    <div class="card full"><h2>7. Validación masiva · Fase 3.1</h2><p class="subtle">Evalúa seis grupos de posición/estadística con los cuatro métodos fijos. Desarrollo 2023–2024, evaluación 2025 y evaluación exploratoria 2026. No requiere seleccionar jugador, rival, línea ni momios. No modifica la estimación individual.</p><div class="field"><label for="massCutoff">Temporada 2026 · antes de semana (excluida)</label><input id="massCutoff" type="number" min="2" max="19" value="12"></div><div class="btns"><button type="button" class="btn primary" id="runMass">Evaluar grupos históricos</button></div><div id="massOutput" class="status warn" aria-live="polite">Pulsa el botón para evaluar los seis grupos.</div></div>
     <div class="card full"><h2>Qué entra y qué falta en este modelo</h2>
       <div class="pills"><span class="pill">✓ Historial real</span><span class="pill">✓ Ajuste moderado por defensiva rival</span><span class="pill">✓ Radar de yds aéreas y terrestres permitidas</span><span class="pill">✓ Prueba sin mirar resultados futuros</span><span class="pill">✓ Pronóstico de clima consultable</span><span class="pill">⚠ Lesiones: verificación manual</span><span class="pill">⚠ Noticias: verificación manual</span><span class="pill">⏳ Impacto del clima sin entrenar</span><span class="pill">⏳ Probabilidades calibradas</span></div>
       <p class="subtle">Modelo exploratorio: media reciente más media global, dispersión histórica y ajuste de hasta ±8% por defensiva. La aproximación normal puede fallar para conteos, jugadores con pocos partidos o cambios de rol. No es un modelo de valor esperado validado.</p>
@@ -274,9 +275,9 @@ function priorRecords(player,market,season,cutoff){
 // Agrega las estadísticas del ataque por enfrentamiento para calcular lo que cedió la defensa.
 // IMPORTANTE: el archivo semanal contiene un registro por jugador, NO un total por equipo.
 // Para evitar doble conteo, se agrupa cada ataque por temporada + semana + equipo + rival.
-function defensiveGameTotals(season,cutoff){
+function defensiveGameTotals(season,cutoff,records=dataset.records){
  const games=new Map();
- for(const r of dataset.records){
+ for(const r of records){
   if(Number(r.season)!==season||Number(r.week)>=cutoff||Number(r.week)<1||!r.team||!r.opponent)continue;
   const offense=String(r.team).toUpperCase().trim(),defense=String(r.opponent).toUpperCase().trim();
   if(!offense||!defense||offense===defense)continue;
@@ -734,6 +735,58 @@ const previousInvalidateAudit=invalidateModel;
 invalidateModel=function(){previousInvalidateAudit();$('auditOutput').textContent='Contexto cambiado. Ejecuta nuevamente la evaluación histórica.';};
 $('reloadData').addEventListener('click',()=>{$('auditOutput').textContent='Datos en actualización. Ejecuta nuevamente la evaluación.';});
 $('csvFile').addEventListener('change',()=>{$('auditOutput').textContent='Fuente cambiada. Ejecuta nuevamente la evaluación.';});
+
+// 3.1 — auditoría de rendimiento por cohortes, independiente de las líneas.
+const massGroups=[['QB','passing_yards','attempts','QB · Pase'],['QB','rushing_yards','carries','QB · Carrera'],['RB','rushing_yards','carries','RB/FB · Carrera'],['RB','receiving_yards','targets','RB/FB · Recepción'],['WR','receiving_yards','targets','WR · Yardas de recepción'],['TE','receptions','targets','TE · Recepciones']];
+function massPos(p){p=String(p||'').trim().toUpperCase();return p==='FB'?'RB':p;}
+function massValid(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));}
+function massAudit(records,cutoff,getDefense){
+ const fields=[...new Set(massGroups.flatMap(x=>[x[1],x[2]]))], byId=new Map(), conflict=new Set();
+ let skipped=0;
+ const periods=[{label:'Desarrollo · 2023–2024',years:[2023,2024]},{label:'Evaluación · 2025',years:[2025]},{label:'Evaluación exploratoria · 2026',years:[2026]}];
+ const make=()=>({n:0,ids:new Set(),paired:0,cAE:0,dAE:0,totals:Array.from({length:4},()=>({ae:0,se:0,b:0})),yearN:{}});
+ const result=periods.map(p=>({...p,groups:massGroups.map(g=>({label:g[3],...make()}))}));
+ for(const r of records){const y=Number(r.season),w=Number(r.week),id=String(r.player_id||'').trim();if(!Number.isInteger(y)||!Number.isInteger(w)||y<2022||y>2026||w<1||w>18||(y===2026&&w>=cutoff))continue;
+  if(!id){skipped++;continue;}if(!byId.has(id))byId.set(id,new Map());const m=byId.get(id),key=y*100+w;
+  if(m.has(key)){const a=m.get(key);if(['position','team','opponent',...fields,'completions'].some(f=>String(a[f]??'')!==String(r[f]??'')))conflict.add(id+'|'+key);}else m.set(key,r);
+ }
+ const clean=[...byId].flatMap(([id,m])=>[...m.entries()].filter(([k])=>!conflict.has(id+'|'+k)).map(([,r])=>r));
+ const cache=new Map();
+ function dc(opp,market,y,w){const key=[opp,market,y,w].join('|');if(!cache.has(key))cache.set(key,getDefense(opp,market,y,w,clean));return cache.get(key);}
+ for(const [id,m] of byId){const rows=[...m.entries()].filter(([k])=>!conflict.has(id+'|'+k)).sort((a,b)=>a[0]-b[0]).map(([,r])=>r);
+  for(let i=0;i<rows.length;i++){const g=rows[i],y=Number(g.season),w=Number(g.week),p=result.find(x=>x.years.includes(y));if(!p||!i)continue;
+   const previous=rows.slice(0,i).filter(r=>Number(r.season)>=y-1),pos=massPos(previous.at(-1)?.position);if(!pos)continue;
+   for(const [j,[group,market,opportunity]] of massGroups.entries()){if(pos!==group||!massValid(g[market]))continue;
+    const hist=previous.filter(r=>massValid(r[market])).slice(-20);if(hist.length<6||hist.slice(-6).filter(r=>massValid(r[opportunity])&&Number(r[opportunity])>0).length<3)continue;
+    const a=hist.map(r=>Number(r[market])),avg=mean(a),recent=mean(a.slice(-5)),mix=.65*recent+.35*avg;
+    const d=dc(String(g.opponent||'').trim().toUpperCase(),market,y,w),ok=Boolean(d?.enough&&Number.isFinite(d.adj));
+    const f=[avg,recent,mix,mix*(1+(ok?d.adj:0))],actual=Number(g[market]),z=p.groups[j];
+    z.n++;z.ids.add(id);z.yearN[y]=(z.yearN[y]||0)+1;
+    f.forEach((v,k)=>{const e=v-actual,t=z.totals[k];t.ae+=Math.abs(e);t.se+=e*e;t.b+=e;});
+    if(ok){z.paired++;z.cAE+=Math.abs(f[2]-actual);z.dAE+=Math.abs(f[3]-actual);}
+   }
+  }
+ }
+ return {periods:result,skipped,conflicts:conflict.size,unique:byId.size,contexts:cache.size};
+}
+function renderMass(){
+ const el=$('massOutput'),cut=Number($('massCutoff').value);if(dataset.seed_mode){el.textContent='Carga estadísticas reales antes de evaluar.';return;}
+ if(!Number.isInteger(cut)||cut<2||cut>19){el.textContent='El corte de 2026 debe ser de 2 a 19.';return;}
+ const years=new Set(dataset.records.map(r=>Number(r.season)));if(![2022,2023,2024,2025,2026].every(y=>years.has(y))){el.textContent='Se necesitan registros de las cinco temporadas 2022–2026.';return;}
+ const gameCache=new Map();function cachedDefense(opp,market,y,w,clean){if(!opp)return null;const key=y+'|'+w;if(!gameCache.has(key))gameCache.set(key,defensiveGameTotals(y,w,clean));const d=defenseMetric(opp,market,y,w,gameCache.get(key));return {enough:d.qualified&&d.leagueAvg>0,adj:d.qualified&&d.leagueAvg>0?clamp((d.average/d.leagueAvg-1)*.30,-.08,.08):0};}
+ const result=massAudit(dataset.records,cut,cachedDefense),fmt=x=>x===null?'—':num(x),labels=['A · Media 20','B · Media 5','C · Mezcla','D · Mezcla + rival'];
+ let html='<b>Auditoría por posición y estadística</b><br>2026: antes de semana '+cut+' · '+result.unique+' identificadores en el universo filtrado. Registros sin ID excluidos: '+result.skipped+' · jugador-semana con duplicado incompatible: '+result.conflicts+'.';
+ for(const [pi,p] of result.periods.entries()){html+='<details class="source-row impact-group" '+(pi===2?'open':'')+'><summary>'+esc(p.label)+'</summary>';
+  for(const z of p.groups){html+='<details class="impact-person" '+(pi===2?'open':'')+'><summary><b>'+esc(z.label)+'</b> · '+z.n+' jugador-partidos · '+z.ids.size+' jugadores</summary><div class="impact-extra">';
+   if(!z.n){html+='<p>Sin muestra elegible.</p></div></details>';continue;}
+   html+='<div class="tablebox"><table class="tbl"><thead><tr><th>Método</th><th>MAE</th><th>RMSE</th><th>Sesgo</th></tr></thead><tbody>'+z.totals.map((t,i)=>'<tr><td>'+labels[i]+'</td><td>'+fmt(t.ae/z.n)+'</td><td>'+fmt(Math.sqrt(t.se/z.n))+'</td><td>'+fmt(t.b/z.n)+'</td></tr>').join('')+'</tbody></table></div>';
+   html+='<p>Comparación pareada C/D solo cuando el ajuste rival está disponible: <b>'+z.paired+'/'+z.n+'</b> jugador-partidos. '+(z.paired?'MAE C: '+fmt(z.cAE/z.paired)+' · MAE D: '+fmt(z.dAE/z.paired)+' · Δ D−C: '+fmt((z.dAE-z.cAE)/z.paired)+' (negativo = menor error observado).':'Sin datos suficientes para comparar el ajuste.')+'</p><p class="subtle">Registros por año: '+Object.entries(z.yearN).map(([y,n])=>y+': '+n).join(' · ')+'. '+(z.n<100||z.ids.size<10?'Muestra limitada. ':'')+'No se elige modelo automáticamente.</p></div></details>';
+  }html+='</details>';}
+ html+='<p class="subtle">Métodos fijos, sin ajuste de parámetros con resultados de evaluación. 2022 sirve de historial inicial. La posición se toma del último registro anterior. Se requieren 6 observaciones previas válidas (hasta 20, temporada actual/anterior) y oportunidad registrada en al menos 3 de las últimas 6. La prueba usa solo resultados observados, no incluye ausencias sin registro. D usa ajuste general por rival disponible desde 4 partidos del equipo y 50 de liga en esa temporada, no ajuste por posición; si no hay ajuste, D equivale a C. A diferencia del laboratorio individual 3.0, D no recorta yardas negativas, para aislar el efecto del rival. MAE, RMSE y sesgo están en unidades de cada rubro. No sumar ni comparar errores de rubros distintos. Los jugador-partidos pueden estar correlacionados. 2025 y 2026 son periodos separados, no una prueba externa ciega; ya se inspeccionaron resultados de 2026. No se modela clima, lesiones, cuotas ni probabilidades. No demuestra rentabilidad.</p>';
+ el.innerHTML=html;el.className='status';
+}
+$('runMass').addEventListener('click',()=>{const el=$('massOutput'),btn=$('runMass');btn.disabled=true;el.textContent='Evaluando los registros históricos…';setTimeout(()=>{try{renderMass();}catch(e){el.textContent='No se pudo evaluar: '+e.message;}finally{btn.disabled=false;}},30);});
+for(const id of ['massCutoff','csvFile','reloadData'])$(id).addEventListener(id==='reloadData'?'click':'change',()=>{$('massOutput').textContent='Datos o corte cambiados. Ejecuta nuevamente la auditoría.';});
 
 </script>
 </body></html>
