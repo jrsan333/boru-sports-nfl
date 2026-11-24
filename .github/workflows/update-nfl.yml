@@ -339,20 +339,52 @@ jobs:
                   else: records[key]=item
               return [r for k,r in records.items() if k not in bad]
 
+
+          # Targeted diagnostics only: never use names to join or modify data.
+          def audit_cody(players, mapping, stats, source=None, converted=None, year=None):
+              try:
+                  pid = '00-0035891'
+                  def same_name(r):
+                      names = [r.get(k) for k in ('player','player_name','full_name','display_name','football_name','name','player_display_name')]
+                      names.append(' '.join(str(r.get(k) or '') for k in ('first_name','last_name')))
+                      return any(' '.join(str(n or '').lower().split()) == 'cody white' for n in names)
+                  def log(label, records):
+                      print('AUDIT CODY '+label+': '+json.dumps(records,ensure_ascii=True,separators=(',',':')))
+                  candidates = [r for r in players if (r.get('gsis_id') or '').strip()==pid or same_name(r)]
+                  pfr_ids = {(r.get('pfr_id') or '').strip() for r in candidates} - {'','NA','na','null','nan','none'}
+                  identity_rows = [r for r in players if r in candidates or (r.get('pfr_id') or '').strip() in pfr_ids]
+                  if year is None:
+                      fields = ('gsis_id','pfr_id','display_name','full_name','football_name','first_name','last_name','position')
+                      log('identidades', [{k:r.get(k) for k in fields} for r in identity_rows])
+                      log('mapeo', {k:mapping.get(k) for k in sorted(pfr_ids | {k for k,v in mapping.items() if v==pid})})
+                      return
+                  fields = ('week','player_id','player','team','opponent','targets','receiving_yards')
+                  log(str(year)+' estadisticas', [{k:r.get(k) for k in fields} for r in stats['records'] if str(r.get('season'))==str(year) and r.get('player_id')==pid])
+                  fields = ('week','game_type','player','player_name','pfr_player_id','team','opponent','offense_snaps','offense_pct')
+                  log(str(year)+' fuente snaps', [{k:r.get(k) for k in fields} for r in source if same_name(r) or (r.get('pfr_player_id') or '').strip() in pfr_ids or mapping.get(r.get('pfr_player_id'))==pid])
+                  log(str(year)+' salida snaps', [r for r in converted if r.get('player_id')==pid])
+              except Exception as exc:
+                  print('::warning::AUDIT CODY: '+type(exc).__name__+': '+str(exc))
+
           def main():
               now=dt.datetime.now(dt.timezone.utc); latest=now.year if now.month>=8 else now.year-1
               result={'source':'nflverse / Pro Football Reference','fetched_at':now.isoformat(),'ok':False,'seasons':{},'records':[]}
               try:
-                  mapping=identity_map(rows('players/players.csv',['gsis_id','pfr_id']))
+                  players=rows('players/players.csv',['gsis_id','pfr_id'])
+                  mapping=identity_map(players)
                   if len(mapping)<1000: raise ValueError('Insufficient identity coverage')
                   stats = json.loads(pathlib.Path('data/player_stats.json').read_text(encoding='utf-8'))
+                  audit_cody(players,mapping,stats)
                   ids_by_year = defaultdict(set)
                   for r in stats['records']:
                       if r.get('player_id'): ids_by_year[int(r['season'])].add(str(r['player_id']).strip())
                   for year in range(latest-4,latest+1):
                       try:
-                          data=convert(rows(f'snap_counts/snap_counts_{year}.csv',['season','game_type','week','pfr_player_id','team','opponent','offense_snaps','offense_pct']),mapping,year)
+                          source=rows(f'snap_counts/snap_counts_{year}.csv',['season','game_type','week','pfr_player_id','team','opponent','offense_snaps','offense_pct'])
+                          data=convert(source,mapping,year)
                           data = [r for r in data if r['player_id'] in ids_by_year[year]]
+                          if year in (2025,2026):
+                              audit_cody(players,mapping,stats,source,data,year)
                           if not data: raise ValueError('No matched rows')
                           result['records'].extend(data); result['seasons'][str(year)]={'ok':True,'count':len(data)}
                           print(f'Player Usage {year}: {len(data)} records matched by ID')
