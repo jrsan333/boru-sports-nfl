@@ -497,9 +497,10 @@ jobs:
           class Reconciliation:
               required={'qb_kneel','qb_spike','qb_scramble','lateral_rush','lateral_reception','play_deleted','passer_player_id','rusher_player_id','rush_attempt','pass_attempt','rushing_yards','sack'}
               def __init__(self):
-                  self.events=defaultdict(lambda: [0]*7); self.counts=defaultdict(int); self.seen=set(); self.error=None
+                  self.events=defaultdict(lambda: [0]*7); self.counts=defaultdict(int); self.seen=set(); self.error=None; self.lateral_plays=[]; self.lateral_missing=[]
               def wrap(self, rows, year, games):
                   missing=self.required-set(rows.fieldnames or [])
+                  self.lateral_missing=sorted({'lateral_receiver_player_id','lateral_rusher_player_id','lateral_receiving_yards','lateral_rushing_yards'}-set(rows.fieldnames or []))
                   if missing: self.error='Columnas ausentes: '+', '.join(sorted(missing))
                   for r in rows:
                       if not self.error:
@@ -539,12 +540,19 @@ jobs:
                       if number(r['rush_attempt'])==1 and number(r['qb_dropback']) in (0,1): self.counts['scrambles_in_original_filter']+=1
                   if number(r['lateral_rush'])==1 or number(r['lateral_reception'])==1:
                       self.counts['laterals']+=1
+                      # 4.7: retain explicit provider attribution as evidence, not a correction.
+                      for flag,kind,original,last,yards,base in (
+                          ('lateral_reception','receiving_yards','receiver_player_id','lateral_receiver_player_id','lateral_receiving_yards','receiving_yards'),
+                          ('lateral_rush','rushing_yards','rusher_player_id','lateral_rusher_player_id','lateral_rushing_yards','rushing_yards')):
+                          if number(r.get(flag))!=1: continue
+                          eligible=(typ=='pass' and kind=='receiving_yards' and number(r.get('qb_dropback'))==1 and number(r.get('pass_attempt'))==1 and number(r.get('sack'))==0 and number(r.get('complete_pass'))==1) or (typ=='run' and kind=='rushing_yards' and number(r.get('qb_dropback')) in (0,1) and number(r.get('rush_attempt'))==1)
+                          self.lateral_plays.append({'game_id':gid,'play_id':str(r['play_id']),'team':t,'week':g['week'],'field':kind,'original_id':pid(original),'last_id':pid(last),'original_yards':number(r.get(base)),'lateral_yards':number(r.get(yards)),'eligible':bool(eligible),'description':str(r.get('desc') or '')[:900]})
                       # Diagnostic only: never infer or redistribute lateral yards.
                       for p in {pid('rusher_player_id'),pid('receiver_player_id'),pid('lateral_rusher_player_id'),pid('lateral_receiver_player_id')}-{None}:
                           self.events[(gid,t,p)][4]+=1
               def result(self,teams):
                   covered={g['id'] for g in teams}
-                  return {'ok':not self.error,'error':self.error,'counts':dict(self.counts),'events':[{'id':g,'team':t,'player_id':p,'v':v} for (g,t,p),v in self.events.items() if g in covered] if not self.error else []}
+                  return {'ok':not self.error,'error':self.error,'counts':dict(self.counts),'lateral_missing':self.lateral_missing,'lateral_plays':[p for p in self.lateral_plays if p['game_id'] in covered] if not self.error else [],'events':[{'id':g,'team':t,'player_id':p,'v':v} for (g,t,p),v in self.events.items() if g in covered] if not self.error else []}
 
           class ReconciliationRows:
               def __init__(self,rows,audit,year,games):
@@ -838,18 +846,22 @@ jobs:
           try:
               stats=read('player_stats.json')
               if not ready(stats): raise ValueError('Estadísticas no disponibles')
-              sr=rows(stats); summary=[]; examples=[]
+              sr=rows(stats); summary=[]; examples=[]; residual=[]; residual_years=[]
               for y in sorted({r['season'] for r in sr}):
                   ctx=read(f'game_context_{y}.json'); special=read(f'pbp_special_{y}.json'); a=[r for r in sr if r['season']==y]
                   report={'season':y,'ok':ready(ctx,'players') and ready(ctx,'teams') and special.get('ok') is True,'records':len(a),'counts':special.get('counts',{}),'error':special.get('error')}
-                  if not report['ok']: summary.append(report); continue
+                  if not report['ok']:
+                      summary.append(report); residual_years.append({'season':y,'ok':False,'error':report.get('error') or 'Contexto PBP no disponible'}); continue
                   gs=defaultdict(list); pv=defaultdict(list); ev=defaultdict(list)
                   for g in rows(ctx,'teams'): gs[(g.get('week'),team(g.get('team')),team(g.get('opponent')))].append(g.get('id'))
                   for p in rows(ctx,'players'): pv[(p.get('id'),team(p.get('team')),p.get('player_id'))].append(p)
                   for p in rows(special,'events'): ev[(p.get('id'),team(p.get('team')),p.get('player_id'))].append(p['v'])
                   metrics={f:Counter({k:0 for k in ('compared','before','after','resolved','new','uncertain','still_different')}) for f in fields}
                   total=Counter({k:0 for k in ('matched','no_link','before_rows','after_rows','resolved_rows','new_rows','uncertain_rows','lateral_rows')})
-                  year_examples=[]
+                  year_examples=[]; year_residual=[]; lp=defaultdict(list)
+                  for play in rows(special,'lateral_plays'):
+                      for pid in {play.get('original_id'),play.get('last_id')}-{None}:
+                          lp[(play.get('game_id'),team(play.get('team')),pid)].append(play)
                   for r in a:
                       games=gs[(r.get('week'),team(r.get('team')),team(r.get('opponent')))]; p= pv[(games[0],team(r.get('team')),r.get('player_id'))] if len(games)==1 and games[0] else []
                       if len(p)!=1 or (v:=vector(p[0])) is None: total['no_link']+=1; continue
@@ -871,14 +883,35 @@ jobs:
                           c=b+delta; new=abs(s-c)>1e-9; after|=new; m['after']+=int(new); m['resolved']+=int(old and not new); m['new']+=int(new and not old); m['still_different']+=int(old and new)
                           if old or new: details.append({'field':f,'weekly':s,'before':b,'after':c,'status':'Coincide tras ajuste' if old and not new else 'Nueva diferencia' if new and not old else 'Pendiente'})
                       total['before_rows']+=int(before); total['after_rows']+=int(after); total['uncertain_rows']+=int(uncertain); total['resolved_rows']+=int(before and not after and not uncertain); total['new_rows']+=int(after and not before)
+                      # Every residual field, not only the first 40 player examples.
+                      if after or uncertain:
+                          evidence=lp[(games[0],team(r.get('team')),r.get('player_id'))]
+                          for q in details:
+                              if q['status']=='Coincide tras ajuste': continue
+                              relevant=[p for p in evidence if p['field']==q['field']]
+                              last=[p for p in relevant if p['last_id']==r.get('player_id')]
+                              eligible=[p for p in last if p['eligible'] and num(p['lateral_yards'])]
+                              complete=not special.get('lateral_missing') and bool(last) and len(eligible)==len(last)
+                              delta=sum(p['lateral_yards'] for p in eligible) if complete else None
+                              candidate=q['after']+delta if num(q['after']) and delta is not None else None
+                              status='Coincidencia candidata por lateral' if candidate is not None and abs(candidate-q['weekly'])<=1e-9 else 'Lateral con evidencia parcial o diferencia restante' if relevant else 'Sin lateral vinculado al campo'
+                              if q['after'] is None: status='No concluyente en 4.6'
+                              year_residual.append({'season':y,'week':r.get('week'),'player':r.get('player'),'team':r.get('team'),'opponent':r.get('opponent'),'id':r.get('player_id'),'game_id':games[0],**q,'classification':status,'lateral_delta':delta,'candidate':candidate,'evidence':relevant})
                       if details and len(year_examples)<40: year_examples.append({'season':y,'week':r.get('week'),'player':r.get('player'),'team':r.get('team'),'id':r.get('player_id'),'kneels':e[0],'spikes':e[3],'laterals':e[4],'details':details})
                   report.update(metrics={f:dict(m) for f,m in metrics.items()},totals=dict(total)); summary.append(report); examples.extend(year_examples)
+                  residual.extend(year_residual)
+                  pending_keys={(q['game_id'],q['team'],q['id']) for q in year_residual}
+                  residual_years.append({'season':y,'ok':True,'pending_rows_46':total['after_rows'],'uncertain_rows_46':total['uncertain_rows'],'listed_player_games':len(pending_keys),'fields':len(year_residual),'classes':dict(Counter(q['classification'] for q in year_residual)),'lateral_columns_missing':special.get('lateral_missing',[]),'lateral_plays_available':len(rows(special,'lateral_plays'))})
               result={'protocol':'4.6-audit-only','ok':any(r['ok'] for r in summary),'generated_at':now.isoformat(),'years':summary,'examples':examples}
               print('PBP Reconciliation 4.6:',[(r['season'],r.get('totals',{}).get('resolved_rows')) for r in summary])
+              residual_report={'protocol':'4.7-audit-only','ok':bool(residual_years) and all(r['ok'] for r in residual_years),'generated_at':now.isoformat(),'years':residual_years,'cases':residual}
+              print('Residual Reconciliation 4.7:',[(r['season'],r.get('fields')) for r in residual_years])
           except Exception as exc:
               result={'protocol':'4.6-audit-only','ok':False,'generated_at':now.isoformat(),'error':str(exc)}
               print('::warning::PBP Reconciliation 4.6: '+str(exc))
+              residual_report={'protocol':'4.7-audit-only','ok':False,'generated_at':now.isoformat(),'error':str(exc),'years':[],'cases':[]}
           (root/'pbp_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+          (root/'pbp_residual.json').write_text(json.dumps(residual_report,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
