@@ -436,6 +436,47 @@ jobs:
               print(f'Player Usage: {len(result["records"])} records; ok={result["ok"]}')
           if __name__=='__main__': main()
           PY
+      - name: Data Integrity 4.3 - publicar copia corregida
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, math
+          root = pathlib.Path('data')
+          base = json.loads((root/'snap_counts.json').read_text())
+          candidate = json.loads((root/'snap_counts_cody_candidate.json').read_text())
+          def key(r):
+              return (r['player_id'], r['season'], r['week'], r['team'], r['opponent'])
+          original = base['records']
+          merged = {key(r): r for r in original}
+          added = []
+          error = None
+          try:
+              if not base['ok'] or len(merged) != len(original):
+                  raise ValueError('Base unavailable or duplicate keys')
+              if any(not candidate['seasons'].get(str(y), {}).get('ok') for y in (2025, 2026)):
+                  raise ValueError('Candidate audit incomplete')
+              for r in candidate['records']:
+                  k = key(r)
+                  if r['player_id'] != '00-0035891' or r['season'] not in (2025, 2026):
+                      raise ValueError('Unexpected candidate identity')
+                  pct = r['share_pct']
+                  if not isinstance(pct, (int, float)) or not math.isfinite(pct) or not 0 <= pct <= 100:
+                      raise ValueError('Invalid candidate share')
+                  if k in merged:
+                      if merged[k] != r: raise ValueError('Conflicting record')
+                      continue
+                  merged[k] = r
+                  added.append(r)
+              if any(merged[key(r)] != r for r in original):
+                  raise ValueError('Original changed')
+          except Exception as exc:
+              error = str(exc)
+              added = []
+          corrected = {**base, 'protocol':'4.3-corrected', 'ok':error is None, 'records':original + added, 'integrity':{'original_count':len(original),'added_count':len(added),'original_changed':0,'error':error}}
+          corrected['seasons'] = {y:{**v,'count':sum(str(r['season'])==y for r in corrected['records'])} for y,v in base['seasons'].items()}
+          (root/'snap_counts_corrected.json').write_text(json.dumps(corrected,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+          print(f'Data Integrity 4.3: original={len(original)}, added={len(added)}, changed=0, ok={corrected["ok"]}')
+          if error: print('::warning::Data Integrity 4.3: '+error)
+          PY
       - name: Descargar contexto de partido NFL (Game Context)
         timeout-minutes: 15
         run: |
