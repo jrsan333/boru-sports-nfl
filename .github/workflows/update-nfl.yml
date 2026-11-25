@@ -546,7 +546,7 @@ jobs:
                           ('lateral_rush','rushing_yards','rusher_player_id','lateral_rusher_player_id','lateral_rushing_yards','rushing_yards')):
                           if number(r.get(flag))!=1: continue
                           eligible=(typ=='pass' and kind=='receiving_yards' and number(r.get('qb_dropback'))==1 and number(r.get('pass_attempt'))==1 and number(r.get('sack'))==0 and number(r.get('complete_pass'))==1) or (typ=='run' and kind=='rushing_yards' and number(r.get('qb_dropback')) in (0,1) and number(r.get('rush_attempt'))==1)
-                          self.lateral_plays.append({'game_id':gid,'play_id':str(r['play_id']),'team':t,'week':g['week'],'field':kind,'original_id':pid(original),'last_id':pid(last),'original_yards':number(r.get(base)),'lateral_yards':number(r.get(yards)),'eligible':bool(eligible),'description':str(r.get('desc') or '')[:900]})
+                          self.lateral_plays.append({'game_id':gid,'play_id':str(r['play_id']),'team':t,'week':g['week'],'field':kind,'original_id':pid(original),'last_id':pid(last),'original_yards':number(r.get(base)),'lateral_yards':number(r.get(yards)),'eligible':bool(eligible),'description':str(r.get('desc') or ''),'last_name':str(r.get('lateral_receiver_player_name' if kind=='receiving_yards' else 'lateral_rusher_player_name') or ''),'play_yards':number(r.get('yards_gained'))})
                       # Diagnostic only: never infer or redistribute lateral yards.
                       for p in {pid('rusher_player_id'),pid('receiver_player_id'),pid('lateral_rusher_player_id'),pid('lateral_receiver_player_id')}-{None}:
                           self.events[(gid,t,p)][4]+=1
@@ -912,6 +912,131 @@ jobs:
               residual_report={'protocol':'4.7-audit-only','ok':False,'generated_at':now.isoformat(),'error':str(exc),'years':[],'cases':[]}
           (root/'pbp_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           (root/'pbp_residual.json').write_text(json.dumps(residual_report,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+          PY
+      - name: Final Data Reconciliation 4.8 - auditoria paralela
+        run: |
+          python3 - <<'PY'
+          import datetime, json, math, pathlib
+          from collections import Counter, defaultdict
+          root = pathlib.Path('data')
+          now = datetime.datetime.now(datetime.timezone.utc)
+          fields = {'attempts':(0,0), 'completions':(1,0), 'passing_yards':(2,0), 'carries':(3,3), 'rushing_yards':(4,3), 'targets':(5,5), 'receptions':(6,5), 'receiving_yards':(7,5)}
+          valid_yards = {2:14,4:15,7:16}
+          counts = {'attempts','completions','carries','targets','receptions'}
+          # Broad screening bounds, not official NFL limits.
+          limits = {'passing_yards':650,'rushing_yards':350,'receiving_yards':350,'attempts':90,'completions':70,'carries':60,'targets':40,'receptions':35}
+          def num(v): return type(v) in (int,float) and math.isfinite(v)
+          def team(v):
+              t=str(v or '').strip().upper(); return {'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}.get(t,t)
+          def read(fn):
+              try:
+                  d=json.loads((root/fn).read_text(encoding='utf-8'))
+                  return d if isinstance(d,dict) else {'ok':False}
+              except (OSError,ValueError): return {'ok':False}
+          def rows(d,k='records'): return d.get(k,[]) if isinstance(d.get(k),list) else []
+          def ready(d,k='records'): return d.get('ok') is not False and bool(rows(d,k))
+          def vector(r):
+              states=r.get('states'); vs=list(states.values()) if isinstance(states,dict) else []
+              if not vs or any(not isinstance(v,list) or len(v)!=17 or not all(num(x) for x in v) for v in vs): return None
+              a=[sum(v[i] for v in vs) for i in range(17)]
+              if any(a[i]<0 or a[i]!=int(a[i]) for i in (0,1,3,5,6,14,15,16)): return None
+              if a[1]>a[0] or a[6]>a[5] or any(a[k]>a[j] for k,j in ((14,0),(15,3),(16,5))): return None
+              return a
+
+          import re, unicodedata
+
+          def alias(s):
+              return ''.join(c for c in unicodedata.normalize('NFKD',str(s)).lower() if c.isascii() and c.isalnum())
+          def aliases(s):
+              parts=str(s or '').strip().split()
+              if not parts: return set()
+              a={alias(s)}
+              if len(parts)>1:
+                  first=alias(parts[0]); tail=alias(''.join(parts[1:]));
+                  if first and tail: a.update((first[0]+tail,first+tail))
+              return a-{''}
+          # Exact explicit signed yardage only; do not infer from field position or weekly totals.
+          segment=re.compile(r'\blateral\s+to\s+(?:\d+-)?([A-Za-z][A-Za-z.\'’\-]*(?:\s+(?:Jr\.?|Sr\.?|II|III|IV))?)\s+to\s+(?:[A-Z]{2,3}\s+-?\d+|50)\s+for\s+(-?\d+)\s+yards?\b',re.I)
+          marker=re.compile(r'\blateral\s+to\b',re.I)
+          def reconstruct(play, names):
+              if not play.get('eligible') or not play.get('last_id') or not num(play.get('lateral_yards')): return [],'Sin atribución estructurada elegible'
+              desc=play.get('description') or ''; n=len(marker.findall(desc)); matches=segment.findall(desc)
+              last=play['last_id']; yd=play['lateral_yards']; explicit=(last,yd,'ID estructurado',None)
+              if n<=1: return [explicit],'Último lateral estructurado'
+              # Keep the original structured candidate if description cannot be safely parsed.
+              if len(matches)!=n or int(matches[-1][1])!=yd: return [explicit],'Cadena incompleta o yardas finales distintas'
+              if re.search(r'\b(?:REVERSED|No Play|NULLIFIED)\b',desc,re.I): return [explicit],'Cadena con revisión/anulación: no ampliada'
+              token=alias(matches[-1][0]); known=names.get(token,set()); last_name=play.get('last_name')
+              if (known and known!={last}) or (last_name and last_name.upper() not in ('NA','NAN','NULL') and token not in aliases(last_name)):
+                  return [explicit],'Identidad final no coincide'
+              result=[]; unknown=0
+              for name, yards in matches[:-1]:
+                  ids=names.get(alias(name),set())
+                  if len(ids)==1: result.append((next(iter(ids)),int(yards),'Descripción: alias único en equipo-partido',name))
+                  else: unknown+=1; result.append((None,int(yards),'Identidad sin resolver',name))
+              result.append((last,yd,'ID estructurado final',matches[-1][0]))
+              return result,'Cadena parcial: identidades sin resolver' if unknown else 'Cadena interpretada; candidata'
+
+          def run48():
+              stats=read('player_stats.json'); sr=rows(stats)
+              if not ready(stats): raise ValueError('Estadísticas no disponibles')
+              years=[]; cases=[]; plays=[]
+              for y in sorted({r['season'] for r in sr}):
+                  ctx=read(f'game_context_{y}.json'); special=read(f'pbp_special_{y}.json'); a=[r for r in sr if r['season']==y]
+                  if not (ready(ctx,'teams') and ready(ctx,'players') and special.get('ok') is True) or special.get('lateral_missing'):
+                      years.append({'season':y,'ok':False,'error':'Contexto o columnas de laterales no disponibles'}); continue
+                  gs=defaultdict(list); pv=defaultdict(list); ev=defaultdict(list); names=defaultdict(lambda:defaultdict(set))
+                  for g in rows(ctx,'teams'): gs[(g.get('week'),team(g.get('team')),team(g.get('opponent')))].append(g.get('id'))
+                  for p in rows(ctx,'players'): pv[(p.get('id'),team(p.get('team')),p.get('player_id'))].append(p)
+                  for p in rows(special,'events'): ev[(p.get('id'),team(p.get('team')),p.get('player_id'))].append(p['v'])
+                  for r in a:
+                      t=team(r.get('team')); g=gs[(r.get('week'),t,team(r.get('opponent')))]; pid=r.get('player_id')
+                      if len(g)==1 and g[0] and re.fullmatch(r'\d{2}-\d{7}',str(pid or '')):
+                          for name in aliases(r.get('player')): names[(g[0],t)][name].add(pid)
+                  delta=defaultdict(float); evidence=defaultdict(list); seen=set(); ambiguous=set(); total=Counter({k:0 for k in ('matched','before_rows','after_rows','resolved_rows','new_rows','uncertain_rows','compared_fields','new_fields','pending_fields','multi_plays','unknown_segments','duplicate_plays','uncompared_attributions')}); metrics=defaultdict(Counter)
+                  for p in rows(special,'lateral_plays'):
+                      gid=p.get('game_id'); t=team(p.get('team')); f=p.get('field'); key=(gid,t,p.get('play_id'),f)
+                      if key in seen:
+                          total['duplicate_plays']+=1; ambiguous.add(key); continue
+                      seen.add(key)
+                      events,status=reconstruct(p,names[(gid,t)])
+                      multi=len(marker.findall(p.get('description') or ''))>1
+                      total['multi_plays']+=int(multi)
+                      if multi: plays.append({'season':y,'game_id':gid,'team':t,'play_id':p.get('play_id'),'field':f,'status':status,'segments':[{'id':i,'yards':yd,'source':s,'name':n} for i,yd,s,n in events],'description':p.get('description')})
+                      for i,yd,s,n in events:
+                          if not i: total['unknown_segments']+=1; continue
+                          k=(gid,t,i,f); evidence[k].append({'play_id':p.get('play_id'),'yards':yd,'source':s,'name':n,'key':key})
+                  # A duplicate source play is excluded rather than counted twice.
+                  for k, es in evidence.items(): delta[k]=sum(e['yards'] for e in es if e['key'] not in ambiguous)
+                  used=set()
+                  for r in a:
+                      t=team(r.get('team')); pid=r.get('player_id'); games=gs[(r.get('week'),t,team(r.get('opponent')))]; p=pv[(games[0],t,pid)] if len(games)==1 and games[0] else []
+                      if len(p)!=1 or (v:=vector(p[0])) is None: continue
+                      total['matched']+=1; gid=games[0]; es=ev[(gid,t,pid)]; e=es[0] if len(es)==1 else [0]*7
+                      if len(es)>1: total['uncertain_rows']+=1; continue
+                      before=False; after=False; uncertain=False
+                      for f,(i,role) in fields.items():
+                          s=r.get(f)
+                          if not num(s) or v[role]<=0 or (i in valid_yards and v[valid_yards[i]]!=v[role]): continue
+                          b=v[i]+{0:e[3],3:e[0],4:e[1]}.get(i,0)
+                          u=(i==4 and e[2]!=e[0]) or (i in (3,4) and e[5]>0) or (i==0 and e[6]>0)
+                          if u: uncertain=True; continue
+                          k=(gid,t,pid,f); used.add(k); c=b+delta.get(k,0); old=abs(s-b)>1e-9; new=abs(s-c)>1e-9
+                          before|=old; after|=new; total['compared_fields']+=1; total['new_fields']+=int(new and not old); total['pending_fields']+=int(new)
+                          m=metrics[f]; m['compared']+=1; m['before']+=int(old); m['after']+=int(new); m['new']+=int(new and not old)
+                          if old or new or delta.get(k,0):
+                              cases.append({'season':y,'week':r.get('week'),'player':r.get('player'),'team':t,'id':pid,'game_id':gid,'field':f,'weekly':s,'before':b,'candidate':c,'delta':delta.get(k,0),'status':'Nueva diferencia' if new and not old else 'Pendiente' if new else 'Coincidencia candidata' if old else 'Sin diferencia','evidence':[{x:z for x,z in q.items() if x!='key'} for q in evidence.get(k,[]) if q['key'] not in ambiguous]})
+                      total['before_rows']+=int(before); total['after_rows']+=int(after); total['resolved_rows']+=int(before and not after and not uncertain); total['new_rows']+=int(after and not before); total['uncertain_rows']+=int(uncertain)
+                  total['uncompared_attributions']=sum(k not in used for k in delta)
+                  years.append({'season':y,'ok':True,'totals':dict(total),'metrics':{k:dict(v) for k,v in metrics.items()}})
+              return {'protocol':'4.8-audit-only','ok':bool(years) and all(y['ok'] for y in years),'generated_at':now.isoformat(),'years':years,'cases':cases,'multi_plays':plays}
+          try:
+              result=run48()
+              print('Final Data Reconciliation 4.8:',[(r['season'],r.get('totals')) for r in result['years']])
+          except Exception as exc:
+              result={'protocol':'4.8-audit-only','ok':False,'generated_at':now.isoformat(),'error':str(exc),'years':[],'cases':[],'multi_plays':[]}
+              print('::warning::Final Data Reconciliation 4.8: '+str(exc))
+          (root/'pbp_final_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
