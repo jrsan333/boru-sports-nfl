@@ -660,6 +660,91 @@ jobs:
               print('::warning::Data Quality Radar 4.4: '+str(e))
           (root/'data_quality.json').write_text(json.dumps(result,ensure_ascii=False,allow_nan=False,separators=(',',':')),encoding='utf-8')
           PY
+      - name: Advanced Data Validation 4.5 - auditoria independiente
+        run: |
+          python3 - <<'PY'
+          import datetime, json, math, pathlib
+          from collections import Counter, defaultdict
+          root = pathlib.Path('data')
+          now = datetime.datetime.now(datetime.timezone.utc)
+          fields = {'attempts':(0,0), 'completions':(1,0), 'passing_yards':(2,0), 'carries':(3,3), 'rushing_yards':(4,3), 'targets':(5,5), 'receptions':(6,5), 'receiving_yards':(7,5)}
+          valid_yards = {2:14,4:15,7:16}
+          counts = {'attempts','completions','carries','targets','receptions'}
+          # Broad screening bounds, not official NFL limits.
+          limits = {'passing_yards':650,'rushing_yards':350,'receiving_yards':350,'attempts':90,'completions':70,'carries':60,'targets':40,'receptions':35}
+          def num(v): return type(v) in (int,float) and math.isfinite(v)
+          def team(v):
+              t=str(v or '').strip().upper(); return {'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}.get(t,t)
+          def read(fn):
+              try:
+                  d=json.loads((root/fn).read_text(encoding='utf-8'))
+                  return d if isinstance(d,dict) else {'ok':False}
+              except (OSError,ValueError): return {'ok':False}
+          def rows(d,k='records'): return d.get(k,[]) if isinstance(d.get(k),list) else []
+          def ready(d,k='records'): return d.get('ok') is not False and bool(rows(d,k))
+          def vector(r):
+              states=r.get('states'); vs=list(states.values()) if isinstance(states,dict) else []
+              if not vs or any(not isinstance(v,list) or len(v)!=17 or not all(num(x) for x in v) for v in vs): return None
+              a=[sum(v[i] for v in vs) for i in range(17)]
+              if any(a[i]<0 or a[i]!=int(a[i]) for i in (0,1,3,5,6,14,15,16)): return None
+              if a[1]>a[0] or a[6]>a[5] or any(a[k]>a[j] for k,j in ((14,0),(15,3),(16,5))): return None
+              return a
+          try:
+              stats=read('player_stats.json'); weather=read('weather_history.json'); schedule=read('schedule.json'); quality=read('data_quality.json')
+              if not ready(stats): raise ValueError('Estadísticas no disponibles')
+              sr=rows(stats); years=sorted({r['season'] for r in sr}); summary=[]; examples=defaultdict(list)
+              def example(kind,r,detail):
+                  if len(examples[kind])<40: examples[kind].append({'season':r.get('season'),'week':r.get('week'),'player':r.get('player'),'id':r.get('player_id'),'team':r.get('team'),'detail':detail})
+              for y in years:
+                  a=[r for r in sr if r['season']==y]; ctx=read(f'game_context_{y}.json'); ctx_ok=ready(ctx,'players') and ready(ctx,'teams'); games=defaultdict(list); pv=defaultdict(list)
+                  if ctx_ok:
+                      for g in rows(ctx,'teams'): games[(g.get('week'),team(g.get('team')),team(g.get('opponent')))].append(g.get('id'))
+                      for p in rows(ctx,'players'): pv[(p.get('id'),team(p.get('team')),p.get('player_id'))].append(p)
+                  metrics={f:Counter({k:0 for k in ('numeric','missing','invalid','zeros','compared','agree','mismatch','zero_agree','zero_vs_nonzero')}) for f in fields}; totals=Counter({k:0 for k in ('no_game','no_player','ambiguous','invalid_vector','matched','logic_rows','outlier_rows','mismatch_rows')});
+                  for r in a:
+                      vals={f:r.get(f) for f in fields}; logic=[]; extreme=[]; mismatches=[]
+                      for f,v in vals.items():
+                          m=metrics[f]
+                          if v is None: m['missing']+=1
+                          elif not num(v): m['invalid']+=1; logic.append(f+' no numérico')
+                          else:
+                              m['numeric']+=1; m['zeros']+=int(v==0)
+                              if f in counts and (v<0 or v!=int(v)): logic.append(f+' conteo inválido')
+                              if abs(v)>limits[f]: extreme.append(f'{f}: {v}')
+                      for small,big in [('completions','attempts'),('receptions','targets')]:
+                          if num(vals[small]) and num(vals[big]) and vals[small]>vals[big]: logic.append(small+' > '+big)
+                      if logic: totals['logic_rows']+=1; example('Coherencia interna',r,'; '.join(logic))
+                      if extreme: totals['outlier_rows']+=1; example('Valores extremos (heurística)',r,'; '.join(extreme))
+                      if not ctx_ok: continue
+                      gs=games[(r.get('week'),team(r.get('team')),team(r.get('opponent')))]; ps=[]
+                      if not gs: totals['no_game']+=1; continue
+                      if len(gs)!=1 or not gs[0]: totals['ambiguous']+=1; continue
+                      ps=pv[(gs[0],team(r.get('team')),r.get('player_id'))]
+                      if not ps: totals['no_player']+=1; continue
+                      if len(ps)!=1: totals['ambiguous']+=1; continue
+                      v=vector(ps[0])
+                      if v is None: totals['invalid_vector']+=1; continue
+                      totals['matched']+=1
+                      for f,(i,role) in fields.items():
+                          s=vals[f]; m=metrics[f]
+                          # Only compare roles with observed events. Absent role is not proof of zero.
+                          if not num(s) or v[role]<=0 or (i in valid_yards and v[valid_yards[i]]!=v[role]): continue
+                          p=v[i]; m['compared']+=1
+                          if abs(s-p)<1e-9: m['agree']+=1; m['zero_agree']+=int(s==0)
+                          else:
+                              m['mismatch']+=1; m['zero_vs_nonzero']+=int((s==0)!=(p==0)); mismatches.append(f'{f}: semanal {s:g} / PBP {p:g}')
+                      if mismatches: totals['mismatch_rows']+=1; example('Diferencias PBP (revisión, no error confirmado)',r,'; '.join(mismatches))
+                  w=[g for g in rows(weather) if g.get('season')==y]; wc=max((g['week'] for g in w if type(g.get('week')) is int),default=None); sw=max((r['week'] for r in a if type(r.get('week')) is int),default=None)
+                  final=[g for g in rows(schedule) if g.get('played') is True] if ready(schedule) and schedule.get('season')==y else []
+                  final_ids={g.get('id') for g in final if g.get('id')}; weather_ids={g.get('id') for g in w if g.get('id')}; ctx_ids={g.get('id') for g in rows(ctx,'teams') if g.get('id')}
+                  summary.append({'season':y,'records':len(a),'pbp_available':ctx_ok,'totals':dict(totals),'fields':{f:dict(m) for f,m in metrics.items()},'last_stats_week':sw,'last_finished_week':wc,'calendar_finished':len(final_ids) if ready(schedule) and schedule.get('season')==y else None,'weather_missing_final':len(final_ids-weather_ids) if ready(weather) and final_ids else None,'pbp_missing_final':len(final_ids-ctx_ids) if ctx_ok and final_ids else None})
+              result={'protocol':'4.5-audit-only','ok':True,'generated_at':now.isoformat(),'years':summary,'examples':dict(examples),'sources':quality.get('sources',[]) if quality.get('ok') else None,'limits':limits}
+              print('Advanced Data Validation 4.5:',len(sr),'registros; discrepancias PBP:',sum(y['totals']['mismatch_rows'] for y in summary))
+          except Exception as e:
+              result={'protocol':'4.5-audit-only','ok':False,'generated_at':now.isoformat(),'error':str(e)}
+              print('::warning::Advanced Data Validation 4.5: '+str(e))
+          (root/'data_validation.json').write_text(json.dumps(result,ensure_ascii=False,allow_nan=False,separators=(',',':')),encoding='utf-8')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
