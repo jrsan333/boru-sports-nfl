@@ -591,6 +591,75 @@ jobs:
                   (root/f'game_context_{year}.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           if __name__=='__main__': main()
           PY
+      - name: Data Quality Radar 4.4 - auditoria automatica
+        run: |
+          python3 - <<'PY'
+          import datetime, json, math, pathlib, re, unicodedata
+          from collections import Counter, defaultdict
+          root = pathlib.Path('data')
+          now = datetime.datetime.now(datetime.timezone.utc)
+          valid_teams = set('ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LA LAC LV MIA MIN NE NO NYG NYJ PHI PIT SEA SF TB TEN WAS'.split())
+          aliases = {'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}
+          fields = ['passing_yards','attempts','completions','rushing_yards','carries','receiving_yards','receptions','targets']
+          def clean(v): return str(v or '').strip()
+          def team(v):
+              t=clean(v).upper(); return aliases.get(t,t)
+          def identity(v): return bool(re.fullmatch(r'\d{2}-\d{7}',clean(v)))
+          def name(v): return ''.join(c for c in unicodedata.normalize('NFKD',clean(v).casefold()) if c.isalnum())
+          def numeric(v): return type(v) in (int,float) and math.isfinite(v)
+          def key(r): return (clean(r.get('player_id')),r.get('season'),r.get('week'),team(r.get('team')),team(r.get('opponent')))
+          def read(file):
+              try:
+                  d=json.loads((root/file).read_text(encoding='utf-8'))
+                  if not isinstance(d,dict): raise ValueError('Formato inválido')
+                  return d
+              except Exception as e: return {'ok':False,'error':str(e)}
+          def records(d): return d.get('records',[]) if isinstance(d.get('records'),list) else []
+          def available(d): return d.get('ok') is not False and bool(records(d))
+          def source(label,d,record_count=None):
+              stamp=d.get('fetched_at') or d.get('updated_at'); age=None
+              try: age=round((now-datetime.datetime.fromisoformat(stamp.replace('Z','+00:00'))).total_seconds()/3600,1)
+              except (AttributeError,ValueError,TypeError): pass
+              return {'name':label,'ok':d.get('ok') is not False and (bool(records(d)) if record_count is None else record_count>0),'count':len(records(d)) if record_count is None else record_count,'fetched_at':stamp,'age_hours':age}
+          try:
+              stats=read('player_stats.json'); base=read('snap_counts.json'); corrected=read('snap_counts_corrected.json'); weather=read('weather_history.json')
+              if not available(stats): raise ValueError('Estadísticas semanales no disponibles')
+              sources=[source('Estadísticas',stats),source('Snaps originales',base),source('Snaps corregidos',corrected),source('Clima histórico',weather)]
+              for fn,label in [('schedule.json','Calendario'),('rosters.json','Plantillas'),('injuries.json','Lesiones'),('news.json','Noticias')]: sources.append(source(label,read(fn)))
+              sr=records(stats); br=records(base); cr=records(corrected)
+              years=sorted({r['season'] for r in sr}); summary=[]; examples=defaultdict(list); names=defaultdict(set); ids_by_name=defaultdict(set)
+              def example(kind,r):
+                  if len(examples[kind])<30: examples[kind].append({'player':r.get('player',''),'id':r.get('player_id',''),'season':r.get('season'),'week':r.get('week'),'team':r.get('team'),'opponent':r.get('opponent')})
+              for r in sr:
+                  if identity(r.get('player_id')) and name(r.get('player')):
+                      names[clean(r['player_id'])].add(name(r['player'])); ids_by_name[name(r['player'])].add(clean(r['player_id']))
+              for y in years:
+                  a=[r for r in sr if r['season']==y]; b=[r for r in br if r.get('season')==y]; c=[r for r in cr if r.get('season')==y]; sc=Counter(map(key,a)); bc=Counter(map(key,b)); cc=Counter(map(key,c)); missing=0; bad_id=0; bad_team=0; invalid_week=0; unmatched=0; matched=0
+                  base_ok=available(base) and base.get('seasons',{}).get(str(y),{}).get('ok') is True
+                  corrected_ok=available(corrected) and corrected.get('seasons',{}).get(str(y),{}).get('ok') is True
+                  for r in a:
+                      k=key(r)
+                      if not identity(r.get('player_id')): bad_id+=1; example('ID ausente o inválido',r)
+                      if not clean(r.get('player')): missing+=1; example('Nombre ausente',r)
+                      if k[3] not in valid_teams or k[4] not in valid_teams or k[3]==k[4]: bad_team+=1; example('Equipo o rival inválido',r)
+                      if type(r.get('week')) is not int or not 1<=r['week']<=18: invalid_week+=1; example('Semana inválida',r)
+                      if sc[k]>1: example('Clave estadística repetida',r)
+                      if bc[k]==1: matched+=1
+                      if corrected_ok and cc[k]!=1: unmatched+=1; example('Sin enlace único a snaps corregidos',r)
+                  for label,rs,counts in [('Snaps originales duplicados',b,bc),('Snaps corregidos duplicados',c,cc)]:
+                      for r in rs:
+                          if counts[key(r)]>1: example(label,r)
+                  w=[r for r in records(weather) if r.get('season')==y]; ctx=read(f'game_context_{y}.json'); sources.append(source(f'Contexto PBP {y}',ctx,len(ctx.get('players') or [])))
+                  summary.append({'season':y,'stats':len(a),'players':len({r['player_id'] for r in a if identity(r.get('player_id'))}),'duplicate_stats':sum(n-1 for n in sc.values()),'bad_id':bad_id,'missing_name':missing,'bad_team':bad_team,'invalid_week':invalid_week,'last_stats_week':max((r['week'] for r in a if type(r.get('week')) is int),default=None),'last_finished_week':max((r['week'] for r in w if type(r.get('week')) is int),default=None),'base_snaps':len(b) if base_ok else None,'corrected_snaps':len(c) if corrected_ok else None,'duplicate_base':sum(n-1 for n in bc.values()) if base_ok else None,'duplicate_corrected':sum(n-1 for n in cc.values()) if corrected_ok else None,'matched_base':matched if base_ok else None,'matched_corrected':len(a)-unmatched if corrected_ok else None,'fields':{f:sum(numeric(r.get(f)) for r in a) for f in fields},'pbp_covered':ctx.get('games_covered') if ctx.get('ok') else None,'pbp_expected':ctx.get('games_expected')})
+              identities={'ids_multiple_names':sum(len(v)>1 for v in names.values()),'names_multiple_ids':sum(len(v)>1 for v in ids_by_name.values())}
+              identity_examples={'ids_multiple_names':[{'id':k,'names':sorted(v)} for k,v in sorted(names.items()) if len(v)>1][:30],'names_multiple_ids':[{'name':k,'ids':sorted(v)} for k,v in sorted(ids_by_name.items()) if len(v)>1][:30]}
+              result={'protocol':'4.4-audit-only','generated_at':now.isoformat(),'ok':True,'years':summary,'sources':sources,'identities':identities,'identity_examples':identity_examples,'examples':dict(examples)}
+              print('Data Quality Radar 4.4:',len(sr),'estadísticas;',len(br),'snaps originales;',len(cr),'snaps corregidos')
+          except Exception as e:
+              result={'protocol':'4.4-audit-only','generated_at':now.isoformat(),'ok':False,'error':str(e)}
+              print('::warning::Data Quality Radar 4.4: '+str(e))
+          (root/'data_quality.json').write_text(json.dumps(result,ensure_ascii=False,allow_nan=False,separators=(',',':')),encoding='utf-8')
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
