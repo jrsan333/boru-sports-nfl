@@ -980,7 +980,7 @@ jobs:
           def run48():
               stats=read('player_stats.json'); sr=rows(stats)
               if not ready(stats): raise ValueError('Estadísticas no disponibles')
-              years=[]; cases=[]; plays=[]
+              years=[]; cases=[]; plays=[]; ledger=[]
               for y in sorted({r['season'] for r in sr}):
                   ctx=read(f'game_context_{y}.json'); special=read(f'pbp_special_{y}.json'); a=[r for r in sr if r['season']==y]
                   if not (ready(ctx,'teams') and ready(ctx,'players') and special.get('ok') is True) or special.get('lateral_missing'):
@@ -1022,6 +1022,7 @@ jobs:
                           u=(i==4 and e[2]!=e[0]) or (i in (3,4) and e[5]>0) or (i==0 and e[6]>0)
                           if u: uncertain=True; continue
                           k=(gid,t,pid,f); used.add(k); c=b+delta.get(k,0); old=abs(s-b)>1e-9; new=abs(s-c)>1e-9
+                          ledger.append([y,gid,t,pid,f,s,b,c])
                           before|=old; after|=new; total['compared_fields']+=1; total['new_fields']+=int(new and not old); total['pending_fields']+=int(new)
                           m=metrics[f]; m['compared']+=1; m['before']+=int(old); m['after']+=int(new); m['new']+=int(new and not old)
                           if old or new or delta.get(k,0):
@@ -1029,6 +1030,7 @@ jobs:
                       total['before_rows']+=int(before); total['after_rows']+=int(after); total['resolved_rows']+=int(before and not after and not uncertain); total['new_rows']+=int(after and not before); total['uncertain_rows']+=int(uncertain)
                   total['uncompared_attributions']=sum(k not in used for k in delta)
                   years.append({'season':y,'ok':True,'totals':dict(total),'metrics':{k:dict(v) for k,v in metrics.items()}})
+              pathlib.Path('/tmp/boru_48_comparison_ledger.json').write_text(json.dumps({'generated_at':now.isoformat(),'fields':ledger},separators=(',',':'),allow_nan=False),encoding='utf-8')
               return {'protocol':'4.8-audit-only','ok':bool(years) and all(y['ok'] for y in years),'generated_at':now.isoformat(),'years':years,'cases':cases,'multi_plays':plays}
           try:
               result=run48()
@@ -1146,6 +1148,101 @@ jobs:
               (root/'pbp_residual_forensics.json').write_text(json.dumps(out,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
               print('Residual Forensics 4.9: '+str(out.get('pending_fields','?'))+' campos pendientes; '+str(out.get('pending_player_games','?'))+' jugador-partidos; ok='+str(out['ok']))
           if __name__=='__main__': main()
+          PY
+      - name: Data Reconciliation Engine 4.10 - candidatos revisados
+        run: |
+          python3 - <<'PY'
+          import datetime, json, pathlib, re, math
+          from collections import Counter, defaultdict
+          root=pathlib.Path('data')
+          # Explicitly reviewed cases; no generic rule or residual-driven attribution.
+          review={
+           ('2022_06_JAX_IND','JAX','Zay Jones','receiving_yards'):('4214','7-Z.Jones',[-11]),
+           ('2023_16_BUF_LAC','LAC','Austin Ekeler','receiving_yards'):('4111','30-A.Ekeler',[-2]),
+           ('2024_03_SF_LA','SF','Eric Saubert','receiving_yards'):('4434','82-E.Saubert',[-3,20]),
+           ('2024_03_SF_LA','SF','Brandon Aiyuk','receiving_yards'):('4434','11-B.Aiyuk',[5]),
+           ('2024_03_SF_LA','SF','Jordan Mason','receiving_yards'):('4434','24-J.Mason',[1]),
+           ('2024_04_JAX_HOU','JAX','Gabe Davis','receiving_yards'):('4287','0-G.Davis',[-7]),
+           ('2025_15_CLE_CHI','CHI','DJ Moore','receiving_yards'):('1934','2-D.Moore',[4]),
+           ('2025_18_IND_HOU','IND','Michael Pittman','receiving_yards'):('4468','11-M.Pittman',[-9]),
+           ('2025_02_SEA_PIT','PIT','Aaron Rodgers','attempts'):('3686','8-A.Rodgers',[1]),
+          }
+          aliases={'Michael Pittman Jr.':'Michael Pittman','Michael Pittman Jr':'Michael Pittman','Gabriel Davis':'Gabe Davis','D.J. Moore':'DJ Moore'}
+          def canon(s): return aliases.get(s,s)
+          segment=re.compile(r'\blateral\s+to\s+(\d+-[A-Za-z][A-Za-z.\'’\-]*(?:\s+(?:Jr\.?|Sr\.?|II|III|IV))?)\s+to\s+(?:[A-Z]{2,3}\s+-?\d+|50)\s+for\s+(-?\d+\s+yards?|no gain)\b',re.I)
+          def read(fn): return json.loads((root/fn).read_text(encoding='utf-8'))
+          def key(q): return (q['season'],q['game_id'],q['team'],q['id'],q['field'])
+          def eq(a,b): return type(a) in (int,float) and type(b) in (int,float) and math.isfinite(a) and math.isfinite(b) and abs(a-b)<=1e-9
+          def evaluate(q,spec):
+              if q.get('reproduces_46') is not True or q.get('duplicate_plays')!=0: raise ValueError('Relectura no reproducida o duplicada')
+              if not eq(q['before'],q['candidate']) or q.get('evidence'): raise ValueError('Evitar doble atribucion 4.8')
+              play_id,token,expected=spec
+              ps=[p for p in q['plays'] if str(p.get('play_id'))==play_id]
+              if len(ps)!=1: raise ValueError('Jugada revisada ausente o duplicada')
+              p=ps[0]; tags=set(p['tags']); desc=p['description']
+              if p.get('base_value') is not None or p.get('special_value') is not None or 'play_deleted' in tags or 'two_point_attempt' in tags or re.search(r'\bNo Play\b|\bNULLIFIED\b',desc,re.I): raise ValueError('Jugada ya atribuida, anulada o conversion')
+              if q['field']=='receiving_yards':
+                  if p['type']!='pass' or 'lateral_reception' not in tags or p['roles'] or 'lateral_del_equipo_sin_ID_directo' not in tags or re.search(r'\bREVERSED\b',desc,re.I): raise ValueError('Clasificacion lateral distinta')
+                  matches=segment.findall(desc)
+                  if len(matches)!=len(re.findall(r'\blateral\s+to\b',desc,re.I)) or len(matches)<2: raise ValueError('Cadena incompleta')
+                  values=[0 if y.lower()=='no gain' else int(y.split()[0]) for n,y in matches if n.casefold()==token.casefold()]
+                  if values!=expected: raise ValueError('Segmentos distintos a revision manual')
+                  if 'penalty' in tags and not (q['game_id']=='2023_16_BUF_LAC' and re.search(r'PENALTY on LAC-82-A\.Erickson, Illegal Forward Pass, 0 yards, enforced at LAC 29',desc,re.I)): raise ValueError('Penalizacion no revisada')
+                  return sum(values),values,play_id,'Segmentos laterales revisados'
+              if q['field']=='attempts':
+                  if p['type']!='no_play' or 'penalty' not in tags or not {'passer_player_id','passer_id'}.issubset(p['roles']): raise ValueError('Identidad o clasificacion distinta')
+                  if not re.search(r'play was REVERSED\.\s*\(Shotgun\)\s*'+re.escape(token)+r' pass incomplete short left\.',desc,re.I) or not re.search(r'PENALTY on PIT-'+re.escape(token)+r', Intentional Grounding, 10 yards, enforced at SEA 46',desc,re.I): raise ValueError('Revision o penalizacion distinta')
+                  return 1,[1],play_id,'Intentional Grounding tras revision'
+              raise ValueError('Campo no contemplado')
+          def run():
+              a=read('pbp_final_reconciliation.json'); b=read('pbp_residual_forensics.json'); stats=read('player_stats.json')
+              ledger=json.loads(pathlib.Path('/tmp/boru_48_comparison_ledger.json').read_text())
+              if not (a.get('ok') is True and b.get('ok') is True and a.get('protocol')=='4.8-audit-only' and b.get('protocol')=='4.9-audit-only' and a.get('generated_at')==b.get('source_generated_at')==ledger.get('generated_at')): raise ValueError('Auditorias previas incompletas o distintas')
+              full={}; years=defaultdict(Counter); old=set(); before=set()
+              for rec in ledger['fields']:
+                  k=tuple(rec[:5]); w,base,c=rec[5:]
+                  if k in full or not all(eq(v,v) for v in (w,base,c)): raise ValueError('Cohorte duplicada o invalida')
+                  full[k]=(w,base,c); years[k[0]]['compared_fields']+=1
+                  if not eq(w,c): old.add(k)
+                  if not eq(w,base): before.add(k)
+              pending=[q for q in a['cases'] if q['status'] in ('Pendiente','Nueva diferencia')]
+              forensic={key(q):q for q in b['cases']}
+              if set(map(key,pending))!=old or len(pending)!=len(old) or set(forensic)!=old or len(forensic)!=len(b['cases']) or b.get('pending_fields')!=len(old): raise ValueError('Pendientes no coinciden con cohorte')
+              for yr in a['years']:
+                  y=yr['season']; t=yr['totals']
+                  if years[y]['compared_fields']!=t['compared_fields'] or sum(k[0]==y for k in old)!=t['pending_fields'] or sum(k[0]==y for k in old-before)!=t['new_fields']: raise ValueError('Totales 4.8 no reproducidos')
+              ids=defaultdict(list)
+              for r in stats['records']:
+                  t=str(r.get('team','')).upper(); t={'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}.get(t,t)
+                  ids[(r['season'],r['week'],t,canon(r['player']))].append(r.get('player_id'))
+              corrections={}; cases=[]; seen=set()
+              for k,q in forensic.items():
+                  w,base,c=full[k]; rk=(q['game_id'],q['team'],canon(q['player']),q['field'])
+                  out={**{x:q[x] for x in ('season','week','game_id','team','id','player','field')},'weekly':w,'candidate_48':c,'delta':0,'candidate_410':c,'status':'Pendiente'}
+                  try:
+                      if rk not in review or rk in seen: raise ValueError('Caso no revisado o repetido')
+                      seen.add(rk)
+                      if not re.fullmatch(r'\d{2}-\d{7}',q['id']) or ids[(q['season'],q['week'],q['team'],canon(q['player']))]!=[q['id']]: raise ValueError('Identidad semanal no unica')
+                      if not all(eq(q[x],v) for x,v in [('weekly',w),('before',base),('candidate',c)]): raise ValueError('Evidencia distinta de cohorte')
+                      delta,segments,play,reason=evaluate(q,review[rk]); corrections[k]=delta
+                      out.update(delta=delta,candidate_410=c+delta,segments=segments,play_id=play,reason=reason,status='Coincidencia candidata' if eq(w,c+delta) else 'Pendiente tras candidato')
+                  except (ValueError,KeyError,TypeError) as exc: out['reason']=str(exc)
+                  cases.append(out)
+              final=set()
+              for k,(w,base,c) in full.items():
+                  z=years[k[0]]; bad=not eq(w,c+corrections.get(k,0)); was=k in old
+                  if bad: final.add(k)
+                  z['pending_48']+=int(was); z['pending_410']+=int(bad); z['resolved_fields']+=int(was and not bad); z['new_fields_vs_48']+=int(bad and not was); z['new_fields_vs_46']+=int(bad and k not in before); z['changed_fields']+=int(k in corrections)
+              totals={k:sum(z[k] for z in years.values()) for k in ('compared_fields','pending_48','pending_410','resolved_fields','new_fields_vs_48','new_fields_vs_46','changed_fields')}
+              totals.update(pending_player_games_48=len({k[:4] for k in old}),pending_player_games_410=len({k[:4] for k in final}),reviewed_not_present=len(set(review)-seen))
+              return {'protocol':'4.10-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':True,'scope':'Casos revisados, no regla general','totals':totals,'years':[{'season':y,**dict(z)} for y,z in sorted(years.items())],'cases':cases}
+          try:
+              result=run()
+              print('Data Reconciliation 4.10: '+json.dumps(result['totals']))
+          except Exception as exc:
+              result={'protocol':'4.10-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':False,'error':str(exc),'years':[],'cases':[]}
+              print('::warning::Data Reconciliation 4.10: '+str(exc))
+          (root/'pbp_reviewed_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
