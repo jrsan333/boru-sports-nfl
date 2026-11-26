@@ -1235,7 +1235,7 @@ jobs:
                   z['pending_48']+=int(was); z['pending_410']+=int(bad); z['resolved_fields']+=int(was and not bad); z['new_fields_vs_48']+=int(bad and not was); z['new_fields_vs_46']+=int(bad and k not in before); z['changed_fields']+=int(k in corrections)
               totals={k:sum(z[k] for z in years.values()) for k in ('compared_fields','pending_48','pending_410','resolved_fields','new_fields_vs_48','new_fields_vs_46','changed_fields')}
               totals.update(pending_player_games_48=len({k[:4] for k in old}),pending_player_games_410=len({k[:4] for k in final}),reviewed_not_present=len(set(review)-seen))
-              return {'protocol':'4.10-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':True,'scope':'Casos revisados, no regla general','totals':totals,'years':[{'season':y,**dict(z)} for y,z in sorted(years.items())],'cases':cases}
+              return {'protocol':'4.10-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':True,'scope':'Casos revisados, no regla general','source_generated_at':a['generated_at'],'forensics_generated_at':b['generated_at'],'totals':totals,'years':[{'season':y,**dict(z)} for y,z in sorted(years.items())],'cases':cases}
           try:
               result=run()
               print('Data Reconciliation 4.10: '+json.dumps(result['totals']))
@@ -1243,6 +1243,113 @@ jobs:
               result={'protocol':'4.10-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':False,'error':str(exc),'years':[],'cases':[]}
               print('::warning::Data Reconciliation 4.10: '+str(exc))
           (root/'pbp_reviewed_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+          PY
+      - name: Data Integrity Certification 4.11 - copia de cohorte auditada
+        run: |
+          python3 - <<'PY'
+          import datetime, hashlib, json, math, pathlib, re
+          from collections import Counter, defaultdict
+          root=pathlib.Path('data')
+          ledger_path=pathlib.Path('/tmp/boru_48_comparison_ledger.json')
+          copy_path=root/'pbp_reconciled_cohort.json'
+          report_path=root/'pbp_integrity_manifest.json'
+          fields=set('attempts completions passing_yards carries rushing_yards targets receptions receiving_yards'.split())
+          # Reviewed game, player name, field, play, signed segments. No general attribution rule.
+          allowed={
+           ('2022_06_JAX_IND','JAX','Zay Jones','receiving_yards'):('4214',[-11]),
+           ('2023_16_BUF_LAC','LAC','Austin Ekeler','receiving_yards'):('4111',[-2]),
+           ('2024_03_SF_LA','SF','Eric Saubert','receiving_yards'):('4434',[-3,20]),
+           ('2024_03_SF_LA','SF','Brandon Aiyuk','receiving_yards'):('4434',[5]),
+           ('2024_03_SF_LA','SF','Jordan Mason','receiving_yards'):('4434',[1]),
+           ('2024_04_JAX_HOU','JAX','Gabe Davis','receiving_yards'):('4287',[-7]),
+           ('2025_02_SEA_PIT','PIT','Aaron Rodgers','attempts'):('3686',[1]),
+           ('2025_15_CLE_CHI','CHI','DJ Moore','receiving_yards'):('1934',[4]),
+           ('2025_18_IND_HOU','IND','Michael Pittman','receiving_yards'):('4468',[-9]),
+          }
+          aliases={'Michael Pittman Jr.':'Michael Pittman','Michael Pittman Jr':'Michael Pittman','Gabriel Davis':'Gabe Davis','D.J. Moore':'DJ Moore'}
+          def canon(s): return aliases.get(s,s)
+          def team(s):
+              t=str(s or '').strip().upper(); return {'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}.get(t,t)
+          def need(test,msg):
+              if not test: raise ValueError(msg)
+          def eq(a,b): return type(a) in (int,float) and type(b) in (int,float) and math.isfinite(a) and math.isfinite(b) and abs(a-b)<=1e-9
+          def digest(raw): return hashlib.sha256(raw).hexdigest()
+          def encode(obj): return json.dumps(obj,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode('utf-8')
+          def load(path):
+              raw=path.read_bytes(); return json.loads(raw),digest(raw)
+          def key(q): return tuple(q[k] for k in ('season','game_id','team','id','field'))
+          def run():
+              inputs={}; sources={}
+              for name,path in [('4.8',root/'pbp_final_reconciliation.json'),('4.9',root/'pbp_residual_forensics.json'),('4.10',root/'pbp_reviewed_reconciliation.json'),('ledger',ledger_path),('stats',root/'player_stats.json')]:
+                  inputs[name],sources[name]=load(path)
+              a,b,c,l,s=(inputs[x] for x in ('4.8','4.9','4.10','ledger','stats'))
+              need(all(inputs[v].get('ok') is True and inputs[v].get('protocol')==v+'-audit-only' for v in ('4.8','4.9','4.10')),'Auditorias incompletas')
+              stamp=a['generated_at']; need(bool(stamp) and stamp==b['source_generated_at']==l['generated_at']==c['source_generated_at'] and b['generated_at']==c['forensics_generated_at'],'Fuentes de ejecuciones distintas')
+              baseline={}; pending=set(); original_pending=set(); season_counts=Counter()
+              for r in l['fields']:
+                  need(isinstance(r,list) and len(r)==8,'Fila de cohorte invalida')
+                  y,g,t,p,f,w,v,x=r; k=tuple(r[:5]); need(type(y) is int and g.startswith(str(y)+'_') and f in fields and re.fullmatch(r'\d{2}-\d{7}',p) and k not in baseline and all(eq(n,n) for n in (w,v,x)),'Clave duplicada o dato invalido')
+                  baseline[k]=(w,v,x); season_counts[y]+=1
+                  if not eq(w,x): pending.add(k)
+                  if not eq(w,v): original_pending.add(k)
+              need(bool(baseline),'Cohorte vacia')
+              for rep in (a,b,c):
+                  need(all(x.get('ok',True) is True for x in rep['years']),'Temporada incompleta')
+                  need(len(rep['years'])==len(season_counts) and {x['season'] for x in rep['years']}==set(season_counts),'Temporadas distintas')
+              for yr in a['years']:
+                  need(yr['totals']['compared_fields']==season_counts[yr['season']],'Cobertura 4.8 distinta')
+              def unique(rows):
+                  out={}
+                  for q in rows:
+                      k=key(q); need(k not in out,'Caso duplicado'); out[k]=q
+                  return out
+              p48=unique(q for q in a['cases'] if q['status'] in ('Pendiente','Nueva diferencia')); p49=unique(b['cases']); p410=unique(c['cases'])
+              need(set(p48)==set(p49)==set(p410)==pending,'Cambio de cohorte pendiente; revisar')
+              need(b['pending_fields']==len(pending),'Conteo 4.9 distinto')
+              stats=defaultdict(list)
+              for r in s['records']:
+                  stats[(r['season'],r['week'],team(r['team']),canon(r['player']))].append(r)
+              patches={}; used=set()
+              for k,q in p410.items():
+                  w,v,x=baseline[k]; rk=(q['game_id'],q['team'],canon(q['player']),q['field'])
+                  need(rk in allowed and rk not in used,'Caso no autorizado: '+str(rk)); used.add(rk)
+                  play,seg=allowed[rk]; delta=sum(seg); f=p49[k]; prev=p48[k]
+                  rows=stats[(q['season'],q['week'],q['team'],canon(q['player']))]
+                  need(len(rows)==1 and rows[0]['player_id']==q['id'] and eq(rows[0].get(q['field']),w),'Identidad o estadistica semanal distinta')
+                  need(f.get('reproduces_46') is True and f.get('duplicate_plays')==0 and not f.get('evidence') and eq(v,x),'Evidencia previa incompatible')
+                  for z in (f,prev): need(eq(z['weekly'],w) and eq(z['before'],v) and eq(z['candidate'],x),'Valores de auditoria distintos')
+                  need(len([p for p in f['plays'] if str(p['play_id'])==play])==1,'Jugada ausente o duplicada')
+                  need(q['status']=='Coincidencia candidata' and str(q['play_id'])==play and q['segments']==seg and eq(q['delta'],delta) and eq(q['weekly'],w) and eq(q['candidate_48'],x) and eq(q['candidate_410'],x+delta) and eq(w,x+delta),'Ajuste candidato no coincide')
+                  patches[k]=delta
+              # Strict historical checkpoint. A changed/missing case requires review; do not auto-certify.
+              need(used==set(allowed),'Caso revisado ausente; nueva revision necesaria')
+              result=[]; by=defaultdict(Counter); remaining=0; changed=0; new48=0; new46=0
+              for k,(w,v,x) in sorted(baseline.items()):
+                  delta=patches.get(k,0); final=x+delta; bad=not eq(w,final); diff=not eq(x,final)
+                  need(diff==(k in patches),'Campo modificado fuera de ajustes autorizados')
+                  z=by[k[0]]; z['fields']+=1; z['changed']+=int(diff); z['pending']+=int(bad)
+                  remaining+=int(bad); changed+=int(diff); new48+=int(bad and k not in pending); new46+=int(bad and k not in original_pending)
+                  result.append([*k,w,v,x,delta,final])
+              expected={'compared_fields':len(result),'pending_48':len(pending),'pending_410':remaining,'resolved_fields':len(pending)-remaining,'new_fields_vs_48':new48,'new_fields_vs_46':new46,'changed_fields':changed,'reviewed_not_present':0,'pending_player_games_48':len({k[:4] for k in pending}),'pending_player_games_410':len({tuple(r[:4]) for r in result if not eq(r[5],r[9])})}
+              need(all(c['totals'].get(k)==v for k,v in expected.items()),'Totales 4.10 no reproducidos')
+              for yr in c['years']:
+                  y=yr['season']; z=by[y]; need(yr['compared_fields']==z['fields'] and yr['changed_fields']==z['changed'] and yr['pending_410']==z['pending'],'Totales por temporada distintos')
+              need(remaining==new48==new46==0 and changed==len(allowed),'Persisten diferencias')
+              snapshot={'protocol':'4.11-cohort-only','source_generated_at':stamp,'columns':['season','game_id','team','player_id','field','weekly','pbp_46','candidate_48','reviewed_delta','candidate_410'],'fields':result}
+              raw=encode(snapshot); need(json.loads(raw)==snapshot,'Serializacion no reversible')
+              tmp=copy_path.with_suffix('.tmp'); tmp.write_bytes(raw); tmp.replace(copy_path)
+              need(digest(copy_path.read_bytes())==digest(raw),'Copia no verificable')
+              return {'ok':True,'source_generated_at':stamp,'source_sha256':sources,'snapshot':{'file':copy_path.name,'sha256':digest(raw),'bytes':len(raw)},'totals':{'fields':len(result),'changed':changed,'unchanged':len(result)-changed,'pending':remaining,'new_vs_48':new48,'new_vs_46':new46},'years':[{'season':y,**{k:z[k] for k in ('fields','changed','pending')}} for y,z in sorted(by.items())]}
+          def main():
+              copy_path.unlink(missing_ok=True)
+              try:
+                  out=run()
+              except Exception as exc:
+                  copy_path.unlink(missing_ok=True); out={'ok':False,'error':str(exc)}
+                  print('::warning::Data Integrity 4.11: '+str(exc))
+              out.update(protocol='4.11-integrity-only',generated_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),scope='Cohorte elegible 4.8; no reemplaza datos de modelos ni certifica exactitud oficial')
+              report_path.write_bytes(encode(out)); print('Data Integrity 4.11: '+json.dumps(out.get('totals',{'ok':False})))
+          if __name__=='__main__': main()
           PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
