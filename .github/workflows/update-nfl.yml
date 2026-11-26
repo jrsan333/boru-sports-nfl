@@ -1038,6 +1038,115 @@ jobs:
               print('::warning::Final Data Reconciliation 4.8: '+str(exc))
           (root/'pbp_final_reconciliation.json').write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
           PY
+      - name: Residual Forensics 4.9 - evidencia por jugada
+        timeout-minutes: 15
+        run: |
+          python3 - <<'PY'
+          import datetime, csv, gzip, io, json, math, pathlib, re, urllib.request
+          from collections import Counter, defaultdict
+          root=pathlib.Path('data')
+          FIELDS={'attempts','completions','passing_yards','carries','rushing_yards','targets','receptions','receiving_yards'}
+          ROLES=('passer_player_id','receiver_player_id','rusher_player_id','lateral_receiver_player_id','lateral_rusher_player_id','fumbled_1_player_id','fumbled_2_player_id','fumble_recovery_1_player_id','fumble_recovery_2_player_id','passer_id','receiver_id','rusher_id')
+          FLAGS=('pass_attempt','rush_attempt','complete_pass','qb_dropback','sack','qb_kneel','qb_spike','qb_scramble','two_point_attempt','play_deleted','penalty','lateral_rush','lateral_reception','fumble','passing_yards','rushing_yards','receiving_yards','lateral_rushing_yards','lateral_receiving_yards','yards_gained')
+          def team(v):
+              t=str(v or '').strip().upper(); return {'LAR':'LA','JAC':'JAX','WSH':'WAS','OAK':'LV','SD':'LAC','STL':'LA'}.get(t,t)
+          def num(v):
+              try:
+                  x=float(v); return x if math.isfinite(x) else None
+              except (ValueError,TypeError): return None
+          def read(fn): return json.loads((root/fn).read_text(encoding='utf-8'))
+          def collect(rows, cases):
+              required={'game_id','play_id','posteam','defteam','season','week','season_type','play_type','desc',*ROLES[:5],*FLAGS[:13]}
+              missing=required-set(rows.fieldnames or [])
+              if missing: raise ValueError('Columnas ausentes: '+', '.join(sorted(missing)))
+              by_game=defaultdict(list)
+              for q in cases: by_game[q['game_id']].append(q)
+              seen=set(); evidence=defaultdict(list); duplicates=Counter()
+              for r in rows:
+                  gid=r['game_id']; t=team(r['posteam'])
+                  if gid not in by_game or r['season_type']!='REG': continue
+                  rolemap=defaultdict(list)
+                  for role in ROLES:
+                      p=str(r.get(role) or '').strip()
+                      if p: rolemap[p].append(role)
+                  for q in by_game[gid]:
+                      if t!=q['team'] or num(r['season'])!=q['season'] or num(r['week'])!=q['week'] or team(r['defteam'])!=q['opponent']: continue
+                      roles=rolemap.get(q['id'],[])
+                      lateral=num(r.get('lateral_rush'))==1 or num(r.get('lateral_reception'))==1
+                      if not roles and not lateral: continue
+                      k=q['case_key']; pk=(k,r['play_id'])
+                      if not r['play_id'] or pk in seen:
+                          duplicates[k]+=1; continue
+                      seen.add(pk)
+                      typ=r['play_type']; d=num(r.get('qb_dropback'))
+                      base=typ in ('pass','run') and num(r.get('two_point_attempt'))==0 and d in (0,1) and not (d==0 and typ!='run')
+                      f=q['field']; pid=q['id']; comp=num(r.get('complete_pass')); value=None
+                      if base and typ=='pass' and num(r.get('pass_attempt'))==1 and num(r.get('sack'))==0:
+                          if f in ('attempts','completions','passing_yards') and r.get('passer_player_id')==pid:
+                              value=1 if f=='attempts' else int(comp==1) if f=='completions' else 0 if comp==0 else num(r.get('passing_yards'))
+                          if f in ('targets','receptions','receiving_yards') and r.get('receiver_player_id')==pid:
+                              value=1 if f=='targets' else int(comp==1) if f=='receptions' else 0 if comp==0 else num(r.get('receiving_yards'))
+                      if base and typ=='run' and num(r.get('rush_attempt'))==1 and r.get('rusher_player_id')==pid and f in ('carries','rushing_yards'):
+                          value=1 if f=='carries' else num(r.get('rushing_yards'))
+                      special=None
+                      if num(r.get('two_point_attempt'))==0 and num(r.get('play_deleted'))==0:
+                          if typ=='qb_kneel' and num(r.get('qb_kneel'))==1 and num(r.get('rush_attempt'))==1 and pid in (r.get('rusher_player_id'),r.get('rusher_id')) and len({x for x in (r.get('rusher_player_id'),r.get('rusher_id')) if x and re.fullmatch(r'\d{2}-\d{7}',x)})==1 and f in ('carries','rushing_yards'):
+                              special=1 if f=='carries' else num(r.get('rushing_yards'))
+                          if typ=='qb_spike' and num(r.get('qb_spike'))==1 and num(r.get('pass_attempt'))==1 and num(r.get('sack'))==0 and pid in (r.get('passer_player_id'),r.get('passer_id')) and len({x for x in (r.get('passer_player_id'),r.get('passer_id')) if x and re.fullmatch(r'\d{2}-\d{7}',x)})==1 and f=='attempts': special=1
+                      tags=[]
+                      for flag in ('play_deleted','penalty','fumble','lateral_rush','lateral_reception','qb_kneel','qb_spike','qb_scramble','two_point_attempt','sack'):
+                          if num(r.get(flag))==1: tags.append(flag)
+                      if not base: tags.append('fuera_filtro_4.5')
+                      if not roles: tags.append('lateral_del_equipo_sin_ID_directo')
+                      evidence[k].append({'play_id':r['play_id'],'type':typ,'roles':roles,'base_value':value,'special_value':special,'tags':tags,'flags':{x:num(r.get(x)) for x in FLAGS if x in r},'description':r['desc']})
+              return evidence,duplicates
+
+          def main():
+              out={'protocol':'4.9-audit-only','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'ok':False,'years':[],'cases':[]}
+              try:
+                  previous=read('pbp_final_reconciliation.json')
+                  if previous.get('protocol')!='4.8-audit-only' or previous.get('ok') is not True: raise ValueError('Reporte 4.8 incompleto')
+                  out['source_generated_at']=previous.get('generated_at')
+                  pending=[q for q in previous['cases'] if q['status'] in ('Pendiente','Nueva diferencia')]
+                  by_year=defaultdict(list); seen=set()
+                  for q in pending:
+                      k='|'.join(str(q[x]) for x in ('season','game_id','team','id','field'))
+                      if k in seen or q['field'] not in FIELDS: raise ValueError('Caso 4.8 duplicado o campo inválido: '+k)
+                      seen.add(k); by_year[q['season']].append({**q,'case_key':k})
+                  for y in previous['years']:
+                      if len(by_year[y['season']])!=y['totals']['pending_fields']: raise ValueError('Conteo de pendientes no coincide con 4.8')
+                  for y, cases in sorted(by_year.items()):
+                      yr={'season':y,'ok':False,'fields':len(cases),'player_games':len({(q['game_id'],q['team'],q['id']) for q in cases})}
+                      if not cases:
+                          yr.update(ok=True,reproduced=0); out['years'].append(yr); continue
+                      try:
+                          ctx=read(f'game_context_{y}.json'); opponents=defaultdict(set)
+                          for g in ctx['teams']: opponents[(g['id'],team(g['team']))].add(team(g['opponent']))
+                          for q in cases:
+                              o=opponents[(q['game_id'],q['team'])]
+                              if len(o)!=1: raise ValueError('Rival no identificado: '+q['case_key'])
+                              q['opponent']=next(iter(o))
+                          url=f'https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{y}.csv.gz'
+                          req=urllib.request.Request(url,headers={'User-Agent':'BORU-NFL/1.0'})
+                          with urllib.request.urlopen(req,timeout=120) as resp, gzip.GzipFile(fileobj=resp) as gz, io.TextIOWrapper(gz,encoding='utf-8-sig') as stream:
+                              ev,dup=collect(csv.DictReader(stream),cases)
+                          for q in cases:
+                              k=q['case_key']; plays=ev[k]; base=sum(p['base_value'] for p in plays if p['base_value'] is not None); special=sum(p['special_value'] for p in plays if p['special_value'] is not None)
+                              repeat=bool(plays) and not dup[k] and abs(base+special-q['before'])<=1e-9
+                              out['cases'].append({**q,'remaining':q['weekly']-q['candidate'],'raw_base':base,'raw_special':special,'reproduces_46':repeat,'duplicate_plays':dup[k],'play_count':len(plays),'tag_counts':dict(Counter(t for p in plays for t in p['tags'])),'plays':plays,'review_status':'Evidencia disponible; atribución pendiente' if repeat else 'Relectura no reproduce 4.6 o evidencia incompleta'})
+                          yr.update(ok=True,reproduced=sum(c['reproduces_46'] for c in out['cases'] if c['season']==y))
+                      except Exception as exc:
+                          yr['error']=str(exc)
+                          out['cases'].extend({**q,'remaining':q['weekly']-q['candidate'],'review_status':'Fuente PBP no disponible','plays':[]} for q in cases if not any(c['case_key']==q['case_key'] for c in out['cases']))
+                          print(f'::warning::Residual Forensics 4.9 {y}: {exc}')
+                      out['years'].append(yr)
+                  out['ok']=all(y['ok'] for y in out['years']); out['pending_fields']=len(pending); out['pending_player_games']=len({(q['season'],q['game_id'],q['team'],q['id']) for q in pending})
+              except Exception as exc:
+                  out['error']=str(exc); print('::warning::Residual Forensics 4.9: '+str(exc))
+              (root/'pbp_residual_forensics.json').write_text(json.dumps(out,ensure_ascii=False,separators=(',',':'),allow_nan=False),encoding='utf-8')
+              print('Residual Forensics 4.9: '+str(out.get('pending_fields','?'))+' campos pendientes; '+str(out.get('pending_player_games','?'))+' jugador-partidos; ok='+str(out['ok']))
+          if __name__=='__main__': main()
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
